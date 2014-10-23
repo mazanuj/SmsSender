@@ -69,10 +69,16 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="AppBootsrapper.cs" />
+    <Compile Include="XmlHelpers\OperationEnum.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="XmlHelpers\ParamsForIndividualMessageSending.cs" />
+    <Compile Include="XmlHelpers\RecipientBodyPair.cs" />
+    <Compile Include="XmlHelpers\RequestParamsBase.cs" />
+    <Compile Include="XmlHelpers\XmlRequest.cs" />
+    <Compile Include="XmlHelpers\ParamsForMessageSending.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
