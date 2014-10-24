@@ -18,7 +18,7 @@
 
             var messageElement = new XElement("message",
                   new XAttribute("start_time", parameters.StartTime),
-                  new XAttribute("end", parameters.StartTime),
+                  new XAttribute("end", parameters.EndTime),
                   new XAttribute("lifetime", parameters.LifeTime),
                   new XAttribute("rate", parameters.Rate),
                   new XAttribute("desc", parameters.Description),

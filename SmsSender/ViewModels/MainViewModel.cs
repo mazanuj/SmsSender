@@ -6,6 +6,8 @@
     using System.ComponentModel.Composition;
     using System.Windows;
 
+    using SmsSender.XmlHelpers.Request;
+
     [Export(typeof(MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
@@ -136,7 +138,20 @@
 
         public void ButtonStart()
         {
-            MessageBox.Show("!!!");
+            var start = AutoStartDate ? "AUTO" : StartDate.ToString("yyyy-MM-dd HH':'mm':'ss");
+            var end = AutoEndDate ? "AUTO" : EndDate.ToString("yyyy-MM-dd HH':'mm':'ss");
+
+            var parameters = new ParamsForMessageSending
+                                                     {
+                                                         StartTime = start,
+                                                         EndTime = end,
+                                                         Rate = this.Rate,
+                                                         Body = this.Body,
+                                                         Source = this.Source
+                                                         //Recipients
+                                                     };
+            var request = XmlRequest.MessageSendingRequest(parameters);
+            MessageBox.Show(request);
         }
 
         private void GetButtonStartEnabledStatus()

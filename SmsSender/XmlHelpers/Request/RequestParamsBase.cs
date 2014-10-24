@@ -11,7 +11,9 @@
 
         protected RequestParamsBase()
         {
-            this.StartTime = this.EndTime = "AUTO";
+            StartTime = EndTime = "AUTO";
+            LifeTime = 4;
+            Description = "My first campaign";
         }
     }
 }
