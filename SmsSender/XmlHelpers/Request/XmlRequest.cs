@@ -1,4 +1,4 @@
-﻿namespace SmsSender.XmlHelpers
+﻿namespace SmsSender.XmlHelpers.Request
 {
     using System.Xml.Linq;
 
@@ -26,7 +26,7 @@
 
             messageElement.Add(new XElement("body", parameters.Body));
 
-            foreach (var recipient in parameters.Recipient)
+            foreach (var recipient in parameters.Recipients)
             {
                 messageElement.Add(new XElement("recipient", recipient));
             }

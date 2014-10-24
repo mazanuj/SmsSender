@@ -1,4 +1,4 @@
-﻿namespace SmsSender.XmlHelpers
+﻿namespace SmsSender.XmlHelpers.Request
 {
     public abstract class RequestParamsBase
     {
@@ -11,7 +11,7 @@
 
         protected RequestParamsBase()
         {
-            StartTime = EndTime = "AUTO";
+            this.StartTime = this.EndTime = "AUTO";
         }
     }
 }
