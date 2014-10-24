@@ -88,6 +88,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="AppBootsrapper.cs" />
+    <Compile Include="Converters\BoolToColorConverter.cs" />
     <Compile Include="XmlHelpers\Request\OperationEnum.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\MainView.xaml.cs">
