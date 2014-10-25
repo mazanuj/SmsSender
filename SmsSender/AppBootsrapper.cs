@@ -9,9 +9,7 @@ using System.Windows;
 
 namespace SmsSender
 {
-    using Caliburn.Micro;
-
-    using SmsSender.ViewModels;
+    using ViewModels;
 
     public class AppBootstrapper : BootstrapperBase
     {

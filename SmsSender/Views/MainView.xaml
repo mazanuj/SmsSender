@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainView" Height="300" Width="300">
     <Grid>
-        
+        <Button Name="buttonStart" Width="100" Height="25" Content="START"/>
+        <Button Name="buttonFile" Width="100" Height="25" Content="File" Margin="96,92,96,152"/>
     </Grid>
 </Window>

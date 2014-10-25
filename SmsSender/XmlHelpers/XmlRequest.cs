@@ -17,12 +17,12 @@
             requestElement.Add(new XElement("operation", OperationEnum.SENDSMS));
 
             var messageElement = new XElement("message",
-                  new XAttribute("start_time", parameters.StartTime),
-                  new XAttribute("end", parameters.StartTime),
-                  new XAttribute("lifetime", parameters.LifeTime),
-                  new XAttribute("rate", parameters.Rate),
-                  new XAttribute("desc", parameters.Description),
-                  new XAttribute("source", parameters.Source));
+                new XAttribute("start_time", parameters.StartTime),
+                new XAttribute("end", parameters.StartTime),
+                new XAttribute("lifetime", parameters.LifeTime),
+                new XAttribute("rate", parameters.Rate),
+                new XAttribute("desc", parameters.Description),
+                new XAttribute("source", parameters.Source));
 
             messageElement.Add(new XElement("body", parameters.Body));
 
@@ -47,13 +47,13 @@
             requestElement.Add(new XElement("operation", OperationEnum.SENDSMS));
 
             var messageElement = new XElement("message",
-                  new XAttribute("start_time", parameters.StartTime),
-                  new XAttribute("end", parameters.StartTime),
-                  new XAttribute("lifetime", parameters.LifeTime),
-                  new XAttribute("rate", parameters.Rate),
-                  new XAttribute("desc", parameters.Description),
-                  new XAttribute("source", parameters.Source),
-                  new XAttribute("type", "individual"));
+                new XAttribute("start_time", parameters.StartTime),
+                new XAttribute("end", parameters.StartTime),
+                new XAttribute("lifetime", parameters.LifeTime),
+                new XAttribute("rate", parameters.Rate),
+                new XAttribute("desc", parameters.Description),
+                new XAttribute("source", parameters.Source),
+                new XAttribute("type", "individual"));
 
             foreach (var pair in parameters.RecipientBodyPairs)
             {
