@@ -1,4 +1,4 @@
-﻿namespace SmsSender.XmlHelpers
+﻿namespace SmsSender.XmlHelpers.Request
 {
     using System.Xml.Linq;
 
@@ -18,7 +18,7 @@
 
             var messageElement = new XElement("message",
                 new XAttribute("start_time", parameters.StartTime),
-                new XAttribute("end", parameters.StartTime),
+                new XAttribute("end", parameters.EndTime),
                 new XAttribute("lifetime", parameters.LifeTime),
                 new XAttribute("rate", parameters.Rate),
                 new XAttribute("desc", parameters.Description),
@@ -26,7 +26,7 @@
 
             messageElement.Add(new XElement("body", parameters.Body));
 
-            foreach (var recipient in parameters.Recipient)
+            foreach (var recipient in parameters.Recipients)
             {
                 messageElement.Add(new XElement("recipient", recipient));
             }

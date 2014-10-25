@@ -44,6 +44,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Caliburn.Micro.2.0.1\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
@@ -58,6 +59,24 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="Xceed.Wpf.AvalonDock">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.AvalonDock.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Aero">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.AvalonDock.Themes.Aero.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.Metro">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.AvalonDock.Themes.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.AvalonDock.Themes.VS2010">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.AvalonDock.Themes.VS2010.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.DataGrid">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.DataGrid.dll</HintPath>
+    </Reference>
+    <Reference Include="Xceed.Wpf.Toolkit">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.2.3\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -71,15 +90,22 @@
     <Compile Include="AppBootsrapper.cs" />
     <Compile Include="Sender.cs" />
     <Compile Include="XmlHelpers\OperationEnum.cs" />
+    <Compile Include="Converters\BoolToColorConverter.cs" />
+    <Compile Include="XmlHelpers\Request\OperationEnum.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="XmlHelpers\ParamsForIndividualMessageSending.cs" />
-    <Compile Include="XmlHelpers\RecipientBodyPair.cs" />
-    <Compile Include="XmlHelpers\RequestParamsBase.cs" />
-    <Compile Include="XmlHelpers\XmlRequest.cs" />
-    <Compile Include="XmlHelpers\ParamsForMessageSending.cs" />
+    <Compile Include="XmlHelpers\Request\ParamsForIndividualMessageSending.cs" />
+    <Compile Include="XmlHelpers\Request\RecipientBodyPair.cs" />
+    <Compile Include="XmlHelpers\Request\RequestParamsBase.cs" />
+    <Compile Include="XmlHelpers\Response\DetailedMessageStatusResponse.cs" />
+    <Compile Include="XmlHelpers\Response\MessageHolder.cs" />
+    <Compile Include="XmlHelpers\Response\MessageSendingResponse.cs" />
+    <Compile Include="XmlHelpers\Response\StatusCodeEnum.cs" />
+    <Compile Include="XmlHelpers\Response\XmlResponse.cs" />
+    <Compile Include="XmlHelpers\Request\XmlRequest.cs" />
+    <Compile Include="XmlHelpers\Request\ParamsForMessageSending.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

@@ -1,4 +1,4 @@
-﻿namespace SmsSender.XmlHelpers
+﻿namespace SmsSender.XmlHelpers.Request
 {
     public class RecipientBodyPair
     {

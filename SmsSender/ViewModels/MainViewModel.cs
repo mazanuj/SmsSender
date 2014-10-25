@@ -1,60 +1,172 @@
-﻿using System.Collections.Generic;
+﻿namespace SmsSender.ViewModels
+﻿{
+﻿    using System;
+﻿    using Caliburn.Micro;
+﻿    using Microsoft.Win32;
+﻿    using System.ComponentModel.Composition;
+﻿    using System.Windows;
 
-namespace SmsSender.ViewModels
-{
-    using System.ComponentModel.Composition;
-    using Caliburn.Micro;
-    using XmlHelpers;
+﻿    using XmlHelpers.Request;
 
-    [Export(typeof (MainViewModel))]
-    public class MainViewModel : PropertyChangedBase
-    {
-        [ImportingConstructor]
-        public MainViewModel()
-        {
-            var parameters = new ParamsForMessageSending
-            {
-                //StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                //EndTime = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss"),
-                LifeTime = 4,
-                Rate = 120,
-                Description = "My first campaign",
-                Source = "ALFANAME",
-                Body = "Message text",
-                Recipient = new[] {"380501234567", "380991234567", "380671234567"}
-            };
+﻿    [Export(typeof (MainViewModel))]
+﻿    public class MainViewModel : PropertyChangedBase
+﻿    {
+﻿        private Byte rate = 1;
+﻿        private bool autoStartDate;
+﻿        private bool autoEndDate;
+﻿        private string recipientsFile, body, source;
+﻿        private DateTime startDate, endDate;
 
-            var individualParams = new ParamsForIndividualMessageSending
-            {
-                //StartTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                //EndTime = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss"),
-                LifeTime = 4,
-                Rate = 120,
-                Description = "My first campaign",
-                Source = "ALFANAME",
-                RecipientBodyPairs = new List<RecipientBodyPair>
-                {
-                    new RecipientBodyPair
-                    {
-                        Body = "first msg",
-                        Recipient = "380501234567"
-                    },
-                    new RecipientBodyPair
-                    {
-                        Body = "second msg",
-                        Recipient = "380991234567"
-                    },
-                    new RecipientBodyPair
-                    {
-                        Body = "third msg",
-                        Recipient = "380671234567"
-                    },
-                }
-            };
+﻿        public DateTime StartDate
+﻿        {
+﻿            get { return startDate; }
+﻿            set
+﻿            {
+﻿                startDate = value;
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
 
-            var res1 = XmlRequest.MessageSendingRequest(parameters);
-            var res2 = XmlRequest.IndividualMessageSendingRequest(individualParams);
-            var res3 = XmlRequest.MessageStatusRequest(3917349);
-        }
-    }
-}
+﻿        public DateTime EndDate
+﻿        {
+﻿            get { return endDate; }
+﻿            set
+﻿            {
+﻿                endDate = value;
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
+
+﻿        public bool AutoStartDate
+﻿        {
+﻿            get { return autoStartDate; }
+﻿            set
+﻿            {
+﻿                autoStartDate = value;
+﻿                CanStartDate = !value;
+﻿                NotifyOfPropertyChange(() => CanStartDate);
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
+
+﻿        public bool AutoEndDate
+﻿        {
+﻿            get { return autoEndDate; }
+﻿            set
+﻿            {
+﻿                autoEndDate = value;
+﻿                CanEndDate = !value;
+﻿                NotifyOfPropertyChange(() => CanEndDate);
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
+
+﻿        public Byte Rate
+﻿        {
+﻿            get { return rate; }
+﻿            set
+﻿            {
+﻿                rate = value;
+﻿                RateLabel = value;
+﻿                NotifyOfPropertyChange(() => RateLabel);
+﻿            }
+﻿        }
+
+﻿        public Byte RateLabel { get; set; }
+
+﻿        public string Source
+﻿        {
+﻿            get { return source; }
+﻿            set
+﻿            {
+﻿                source = value;
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
+
+﻿        public string Body
+﻿        {
+﻿            get { return body; }
+﻿            set
+﻿            {
+﻿                body = value;
+﻿                GetButtonStartEnabledStatus();
+﻿            }
+﻿        }
+
+﻿        public bool RecipientsFileLabel { get; set; }
+﻿        public bool CanStartDate { get; set; }
+﻿        public bool CanEndDate { get; set; }
+﻿        public bool CanButtonStart { get; set; }
+
+﻿        [ImportingConstructor]
+﻿        public MainViewModel()
+﻿        {
+﻿            StartDate = DateTime.Now;
+﻿            EndDate = DateTime.Now;
+
+﻿            RateLabel = 1;
+﻿            AutoStartDate = true;
+﻿            AutoEndDate = true;
+﻿        }
+
+﻿        public void ButtonRecipients()
+﻿        {
+﻿            var dlg = new OpenFileDialog();
+
+﻿            if (dlg.ShowDialog() == false) return;
+﻿            recipientsFile = dlg.FileName;
+
+﻿            RecipientsFileLabel = true;
+﻿            NotifyOfPropertyChange(() => RecipientsFileLabel);
+
+﻿            GetButtonStartEnabledStatus();
+﻿        }
+
+﻿        public void ButtonStart()
+﻿        {
+﻿            var start = AutoStartDate ? "AUTO" : StartDate.ToString("yyyy-MM-dd HH':'mm':'ss");
+﻿            var end = AutoEndDate ? "AUTO" : EndDate.ToString("yyyy-MM-dd HH':'mm':'ss");
+
+﻿            var parameters = new ParamsForMessageSending
+﻿            {
+﻿                StartTime = start,
+﻿                EndTime = end,
+﻿                Rate = Rate,
+﻿                Body = Body,
+﻿                Source = Source
+﻿                //Recipients
+﻿            };
+﻿            var request = XmlRequest.MessageSendingRequest(parameters);
+﻿            MessageBox.Show(request);
+﻿        }
+
+﻿        private void GetButtonStartEnabledStatus()
+﻿        {
+﻿            CanButtonStart = CheckIfAllFieldsAreFilled();
+﻿            NotifyOfPropertyChange(() => CanButtonStart);
+﻿        }
+
+﻿        private bool CheckIfAllFieldsAreFilled()
+﻿        {
+﻿            if (AutoStartDate && AutoEndDate)
+﻿                return CheckIfSomeFieldsAreFilled();
+
+﻿            if (AutoStartDate == false && AutoEndDate == false)
+﻿                return CheckIfSomeFieldsAreFilled() && CheckDates(StartDate, EndDate);
+
+﻿            return CheckIfSomeFieldsAreFilled();
+﻿        }
+
+﻿        private bool CheckIfSomeFieldsAreFilled()
+﻿        {
+﻿            return !string.IsNullOrEmpty(Source) && !string.IsNullOrEmpty(Body) &&
+﻿                   !string.IsNullOrEmpty(recipientsFile);
+﻿        }
+
+﻿        private bool CheckDates(DateTime start, DateTime end)
+﻿        {
+﻿            return start < end;
+﻿        }
+﻿    }
+﻿}
