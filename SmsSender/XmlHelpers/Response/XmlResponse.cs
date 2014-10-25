@@ -15,7 +15,42 @@
             var responseHolder = new MessageSendingResponse();
 
             var code = stateElement.Attribute("code").Value;
-            if (!string.IsNullOrEmpty(code)) responseHolder.Code = code;
+            if (!string.IsNullOrEmpty(code))
+            {
+                switch (code)
+                {
+                    case "ACCEPT":
+                        responseHolder.Code = StatusCodeEnum.ACCEPT;
+                        break;
+                    case "XMLERROR":
+                        responseHolder.Code = StatusCodeEnum.XMLERROR;
+                        break;
+                    case "ERRPHONES":
+                        responseHolder.Code = StatusCodeEnum.ERRPHONES;
+                        break;
+                    case "ERRSTARTTIME":
+                        responseHolder.Code = StatusCodeEnum.ERRSTARTTIME;
+                        break;
+                    case "ERRENDTIME":
+                        responseHolder.Code = StatusCodeEnum.ERRENDTIME;
+                        break;
+                    case "ERRLIFETIME":
+                        responseHolder.Code = StatusCodeEnum.ERRLIFETIME;
+                        break;
+                    case "ERRSPEED":
+                        responseHolder.Code = StatusCodeEnum.ERRSPEED;
+                        break;
+                    case "ERRALFANAME":
+                        responseHolder.Code = StatusCodeEnum.ERRALFANAME;
+                        break;
+                    case "ERRTEXT":
+                        responseHolder.Code = StatusCodeEnum.ERRTEXT;
+                        break;
+                    case "INSUFFICIENTFUNDS":
+                        responseHolder.Code = StatusCodeEnum.INSUFFICIENTFUNDS;
+                        break;
+                }
+            }
 
             var campaignId = stateElement.Attribute("campaignID").Value;
             if (!string.IsNullOrEmpty(campaignId)) responseHolder.CampaignId = campaignId;

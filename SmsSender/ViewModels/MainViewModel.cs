@@ -7,6 +7,7 @@
     using System.Windows;
 
     using SmsSender.XmlHelpers.Request;
+    using SmsSender.XmlHelpers.Response;
 
     [Export(typeof(MainViewModel))]
     public class MainViewModel : PropertyChangedBase
@@ -151,6 +152,7 @@
                                                          //Recipients
                                                      };
             var request = XmlRequest.MessageSendingRequest(parameters);
+
             MessageBox.Show(request);
         }
 
