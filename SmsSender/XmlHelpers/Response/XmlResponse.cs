@@ -29,7 +29,7 @@
             return responseHolder;
         }
 
-        public static DetailedMessageStatusResponse ProcessDetailedMessageStatusResponse(string response)
+        public static DetailedMessageStatusResponse ProcessDetailedMessageStatusResponse(string response)//TODO campaignID
         {
             var doc = XDocument.Parse(response);
 
@@ -46,12 +46,12 @@
             foreach (var messageElement in messageElements)
             {
                 responseHolder.Messages.Add(new MessageHolder
-                                                {
-                                                    Phone = messageElement.Attribute("phone").Value,
-                                                    Part = byte.Parse(messageElement.Attribute("part").Value),
-                                                    Parts = byte.Parse(messageElement.Attribute("parts").Value),
-                                                    Status = messageElement.Attribute("status").Value
-                                                });
+                {
+                    Phone = messageElement.Attribute("phone").Value,
+                    Part = byte.Parse(messageElement.Attribute("part").Value),
+                    Parts = byte.Parse(messageElement.Attribute("parts").Value),
+                    Status = messageElement.Attribute("status").Value
+                });
             }
 
             return responseHolder;

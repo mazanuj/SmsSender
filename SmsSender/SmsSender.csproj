@@ -89,7 +89,6 @@
     </Compile>
     <Compile Include="AppBootsrapper.cs" />
     <Compile Include="Sender.cs" />
-    <Compile Include="XmlHelpers\OperationEnum.cs" />
     <Compile Include="Converters\BoolToColorConverter.cs" />
     <Compile Include="XmlHelpers\Request\OperationEnum.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />

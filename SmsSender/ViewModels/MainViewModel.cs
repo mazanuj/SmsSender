@@ -1,4 +1,14 @@
-﻿namespace SmsSender.ViewModels
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Windows.Documents;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using SmsSender.Properties;
+using SmsSender.XmlHelpers.Response;
+
+namespace SmsSender.ViewModels
 ﻿{
 ﻿    using System;
 ﻿    using Caliburn.Micro;
@@ -112,7 +122,12 @@
 
 ﻿        public void ButtonRecipients()
 ﻿        {
-﻿            var dlg = new OpenFileDialog();
+﻿            var dlg = new OpenFileDialog
+﻿            {
+﻿                CheckFileExists = true,
+﻿                Filter = "File (*.txt or *.xml)|*.txt;*.xml",
+﻿                InitialDirectory = AppDomain.CurrentDomain.BaseDirectory
+﻿            };
 
 ﻿            if (dlg.ShowDialog() == false) return;
 ﻿            recipientsFile = dlg.FileName;
@@ -135,10 +150,48 @@
 ﻿                Rate = Rate,
 ﻿                Body = Body,
 ﻿                Source = Source
-﻿                //Recipients
 ﻿            };
+
+﻿            List<string> phonesList;
+﻿            if (recipientsFile.EndsWith("txt"))
+﻿                phonesList = File.ReadAllLines(recipientsFile).ToList();
+﻿            else
+﻿            {
+﻿                try
+﻿                {
+                     var doc = XDocument.Load(recipientsFile);
+                     var att =
+                         (IEnumerable)
+                             doc.XPathSelectElements("//tels/item").Select(x => x.Value);
+
+                    var enumerable = att as IList<string> ?? att.Cast<string>();
+﻿                    phonesList = enumerable.ToList();
+﻿                }
+﻿                catch (Exception)
+﻿                {
+﻿                    throw new Exception("Wrong XML format");
+﻿                }
+﻿            }
+
 ﻿            var request = XmlRequest.MessageSendingRequest(parameters);
-﻿            MessageBox.Show(request);
+             //send request
+             //recv response
+﻿            MessageBox.Show(request);//TODO remove
+﻿            string resp = null;
+
+             var t = XmlResponse.ProcessMessageSendingResponse(resp);
+﻿            if (t.Code == StatusCodeEnum.ACCEPT.ToString())//TODO enum
+﻿            {
+                 
+﻿                //TODO timer
+
+﻿                var b = XmlResponse.ProcessDetailedMessageStatusResponse(t.CampaignId);
+                 
+                 //if(b.Status==StatusCodeEnum.COMPLEATE)//TODO
+//﻿                {
+//﻿                    
+//﻿                }
+﻿            }
 ﻿        }
 
 ﻿        private void GetButtonStartEnabledStatus()
@@ -164,7 +217,7 @@
 ﻿                   !string.IsNullOrEmpty(recipientsFile);
 ﻿        }
 
-﻿        private bool CheckDates(DateTime start, DateTime end)
+﻿        private static bool CheckDates(DateTime start, DateTime end)
 ﻿        {
 ﻿            return start < end;
 ﻿        }
