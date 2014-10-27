@@ -10,9 +10,9 @@ namespace SmsSender.XmlHelpers
     {
         private const string XmlFilePath = @"SP.xml";
 
-        internal static IList<string> GetTels()
+        internal static IList<string> GetTels(string xmlFilePath)
         {
-            var doc = XDocument.Load(XmlFilePath);
+            var doc = XDocument.Load(xmlFilePath);
             var att =
                 (IEnumerable)
                     doc.XPathSelectElements("//tels/item").Select(x => x.Value);

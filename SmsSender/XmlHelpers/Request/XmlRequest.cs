@@ -82,7 +82,7 @@
         /// <summary>
         /// Детальная статистическая информация по рассылке
         /// </summary>
-        public static string DetailedMessageStatusRequest(int campaignId)
+        public static string DetailedMessageStatusRequest(string campaignId)
         {
             var requestElement = new XElement("request");
             requestElement.Add(new XElement("operation", OperationEnum.GETCAMPAIGNDETAIL));
