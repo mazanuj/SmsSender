@@ -114,6 +114,8 @@ namespace SmsSender.ViewModels
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
         public bool CanButtonStart { get; set; }
+        public string StatusCode { get; set; }
+        public int NumberLimit { get; set; }
 
         [ImportingConstructor]
         public MainViewModel()
@@ -148,6 +150,8 @@ namespace SmsSender.ViewModels
 
         public async void ButtonStart()
         {
+            SetStatusCodeAtUI(string.Empty);
+
             var parameters = new ParamsForMessageSending
             {
                 StartTime = AutoStartDate ? "AUTO" : StartDate.ToString("yyyy-MM-dd HH':'mm':'ss"),
@@ -196,7 +200,9 @@ namespace SmsSender.ViewModels
 
             if (status.Code == StatusCodeEnum.ACCEPT)
             {
-                //TODO timer + list rec + status          
+                //TODO timer + list rec + status       
+                SetStatusCodeAtUI(status.Code.ToString());
+
                 foreach (var pair in status.RecipientStatusPairs)
                 {
                     RecipientStatusCollection.Insert(0, pair);
@@ -214,6 +220,8 @@ namespace SmsSender.ViewModels
                 //TODO status code
                 {
                     //TODO messageStatus + set status for all phones
+                    SetStatusCodeAtUI(detailedStatus.Status);
+
                     foreach (var message in detailedStatus.Messages)
                     {
                         RecipientStatusCollection.Insert(0, message.RecipientStatusPair);
@@ -231,6 +239,8 @@ namespace SmsSender.ViewModels
             else
             {
                 //TODO запись на форму status.Code
+                SetStatusCodeAtUI(status.Code.ToString());
+
                 File.WriteAllText("request.xml", requestXml);
                 File.WriteAllText("response.xml", responseXml);
             }
@@ -262,6 +272,12 @@ namespace SmsSender.ViewModels
         private static bool CheckDates(DateTime start, DateTime end)
         {
             return start < end;
+        }
+
+        private void SetStatusCodeAtUI(string statusCode)
+        {
+            StatusCode = statusCode;
+            NotifyOfPropertyChange(() => StatusCode);
         }
     }
 }
