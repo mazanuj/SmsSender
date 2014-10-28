@@ -22,7 +22,7 @@ namespace SmsSender.ViewModels
 
     using XmlHelpers.Request;
 
-    [Export(typeof(MainViewModel))]
+    [Export(typeof (MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
@@ -190,7 +190,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient { Credentials = new NetworkCredential("380635796623", "P@ssw0rd") };
+            var wc = new WebClient {Credentials = new NetworkCredential("380635796623", "P@ssw0rd")};
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -200,7 +200,10 @@ namespace SmsSender.ViewModels
 
             if (status.Code == StatusCodeEnum.ACCEPT)
             {
-                //TODO timer + list rec + status       
+                int interval;
+                interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
+
+                //TODO timer   
                 SetStatusCodeAtUI(status.Code.ToString());
 
                 foreach (var pair in status.RecipientStatusPairs)
@@ -216,10 +219,9 @@ namespace SmsSender.ViewModels
 
 
 
-                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.RecipientStatusPair.Status == "STOPED"))
-                //TODO status code
+                if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
+                    detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
                 {
-                    //TODO messageStatus + set status for all phones
                     SetStatusCodeAtUI(detailedStatus.Status);
 
                     foreach (var message in detailedStatus.Messages)
@@ -238,7 +240,6 @@ namespace SmsSender.ViewModels
             }
             else
             {
-                //TODO запись на форму status.Code
                 SetStatusCodeAtUI(status.Code.ToString());
 
                 File.WriteAllText("request.xml", requestXml);
