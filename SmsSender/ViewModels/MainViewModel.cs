@@ -140,7 +140,7 @@ namespace SmsSender.ViewModels
             GetButtonStartEnabledStatus();
         }
 
-        public void ButtonStart()
+        public async void ButtonStart()
         {
             var parameters = new ParamsForMessageSending
             {
@@ -181,23 +181,27 @@ namespace SmsSender.ViewModels
 
             //send request
             var wc = new WebClient {Credentials = new NetworkCredential("380635796623", "P@ssw0rd")};
-            var response = wc.UploadData(
+            var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
+            var responseXml = Encoding.Default.GetString(response);
             //recv response
-            var status = XmlResponse.ProcessMessageSendingResponse(Encoding.Default.GetString(response));
+            var status = XmlResponse.ProcessMessageSendingResponse(responseXml);
 
             if (status.Code == StatusCodeEnum.ACCEPT)
             {
-                //TODO timer
-
+                //TODO timer + list rec + status          
+      
                 requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                response = wc.UploadData(
+                response = await wc.UploadDataTaskAsync(
                     new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
                 var detailedStatus =
                     XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
 
-                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.Status == "STOPED")) //TODO status code
+
+
+                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.Status == "STOPED"))
+                    //TODO status code
                 {
                     //TODO messageStatus + set status for all phones
                     XmlDataWorker.SetTels(detailedStatus.Messages
@@ -208,6 +212,12 @@ namespace SmsSender.ViewModels
                             x.Status != "ALFANAMELIMITED")
                         .Select(x => x.Phone));
                 }
+            }
+            else
+            {
+                //TODO запись на форму status.Code
+                File.WriteAllText("request.xml",requestXml);
+                File.WriteAllText("response.xml", responseXml);
             }
         }
 
