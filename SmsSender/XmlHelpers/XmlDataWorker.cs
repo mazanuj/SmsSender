@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
@@ -13,11 +14,19 @@ namespace SmsSender.XmlHelpers
         internal static IList<string> GetTels(string xmlFilePath)
         {
             var doc = XDocument.Load(xmlFilePath);
-            var att =
+            try
+            {
+                var att =
                 (IEnumerable)
                     doc.XPathSelectElements("//tels/item").Select(x => x.Value);
 
-            return att as IList<string> ?? att.Cast<string>().ToList();
+                return att as IList<string> ?? att.Cast<string>().ToList();
+            }
+            catch (Exception)
+            {
+               return new List<string>();
+            }
+            
         }
 
         internal static void SetTels(IEnumerable<string> values)

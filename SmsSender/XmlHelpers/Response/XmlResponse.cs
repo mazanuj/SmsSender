@@ -21,6 +21,8 @@
                 {
                     case "ACCEPT":
                         responseHolder.Code = StatusCodeEnum.ACCEPT;
+                        var campaignId = stateElement.Attribute("campaignID").Value;
+                        if (!string.IsNullOrEmpty(campaignId)) responseHolder.CampaignId = campaignId;
                         break;
                     case "XMLERROR":
                         responseHolder.Code = StatusCodeEnum.XMLERROR;
@@ -50,10 +52,7 @@
                         responseHolder.Code = StatusCodeEnum.INSUFFICIENTFUNDS;
                         break;
                 }
-            }
-
-            var campaignId = stateElement.Attribute("campaignID").Value;
-            if (!string.IsNullOrEmpty(campaignId)) responseHolder.CampaignId = campaignId;
+            }            
 
             var date = stateElement.Attribute("date").Value;
             if (!string.IsNullOrEmpty(date)) responseHolder.Date = date;

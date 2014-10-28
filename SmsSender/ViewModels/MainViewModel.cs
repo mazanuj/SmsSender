@@ -142,16 +142,14 @@ namespace SmsSender.ViewModels
 
         public void ButtonStart()
         {
-            var start = AutoStartDate ? "AUTO" : StartDate.ToString("yyyy-MM-dd HH':'mm':'ss");
-            var end = AutoEndDate ? "AUTO" : EndDate.ToString("yyyy-MM-dd HH':'mm':'ss");
-
             var parameters = new ParamsForMessageSending
             {
-                StartTime = start,
-                EndTime = end,
+                StartTime = AutoStartDate ? "AUTO" : StartDate.ToString("yyyy-MM-dd HH':'mm':'ss"),
+                EndTime = AutoEndDate ? "AUTO" : EndDate.ToString("yyyy-MM-dd HH':'mm':'ss"),
                 Rate = Rate,
                 Body = Body,
-                Source = Source
+                Source = Source,
+                LifeTime = 24
             };
 
             //формируем список новых телефонов
@@ -174,13 +172,15 @@ namespace SmsSender.ViewModels
                 return;
 
             var phonesInBase = XmlDataWorker.GetTels("SP.xml");
-            parameters.Recipients = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
-
+            phonesList = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
+            if (phonesList.Count == 0)
+                return;
             parameters.Recipients = phonesList;
+
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient {Credentials = new NetworkCredential("login", "pass")};
+            var wc = new WebClient {Credentials = new NetworkCredential("380635796623", "P@ssw0rd")};
             var response = wc.UploadData(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -197,9 +197,16 @@ namespace SmsSender.ViewModels
                 var detailedStatus =
                     XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
 
-                if (detailedStatus.Status == "COMPLETE") //TODO status code
+                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.Status == "STOPED")) //TODO status code
                 {
-                    XmlDataWorker.SetTels(parameters.Recipients);
+                    //TODO messageStatus + set status for all phones
+                    XmlDataWorker.SetTels(detailedStatus.Messages
+                        .Where(x =>
+                            x.Status != "STOPED" &&
+                            x.Status != "USERSTOPED" &&
+                            x.Status != "ERROR" &&
+                            x.Status != "ALFANAMELIMITED")
+                        .Select(x => x.Phone));
                 }
             }
         }
