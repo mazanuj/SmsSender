@@ -1,28 +1,22 @@
-﻿﻿using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-﻿using System.Net;
-﻿using System.Text;
-﻿using System.Xml;
-﻿using System.Xml.Linq;
-using System.Xml.XPath;
-﻿using SmsSender.XmlHelpers;
-﻿using SmsSender.XmlHelpers.Response;
-
-namespace SmsSender.ViewModels
+﻿namespace SmsSender.ViewModels
 {
-    using System;
-    using System.Collections.ObjectModel;
-
-    using Caliburn.Micro;
+    ﻿using Caliburn.Micro;
     using Microsoft.Win32;
+    using SmsSender.XmlHelpers;
+    using SmsSender.XmlHelpers.Response;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.ComponentModel.Composition;
+    using System.IO;
+    using System.Linq;
+    using System.Net;
+    using System.Text;
+    using System.Threading;
     using System.Windows;
-
     using XmlHelpers.Request;
 
-    [Export(typeof (MainViewModel))]
+    [Export(typeof(MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
@@ -30,6 +24,8 @@ namespace SmsSender.ViewModels
         private bool autoEndDate;
         private string recipientsFile, body, source;
         private DateTime startDate, endDate;
+
+        private Timer timer;
 
         public ObservableCollection<RecipientStatusPair> RecipientStatusCollection { get; private set; }
 
@@ -151,6 +147,7 @@ namespace SmsSender.ViewModels
         public async void ButtonStart()
         {
             SetStatusCodeAtUI(string.Empty);
+            RecipientStatusCollection.Clear();
 
             var parameters = new ParamsForMessageSending
             {
@@ -190,7 +187,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient {Credentials = new NetworkCredential("380635796623", "P@ssw0rd")};
+            var wc = new WebClient { Credentials = new NetworkCredential("380635796623", "P@ssw0rd") };
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -200,43 +197,57 @@ namespace SmsSender.ViewModels
 
             if (status.Code == StatusCodeEnum.ACCEPT)
             {
-                int interval;
-                interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
-
-                //TODO timer   
                 SetStatusCodeAtUI(status.Code.ToString());
 
-                foreach (var pair in status.RecipientStatusPairs)
-                {
-                    RecipientStatusCollection.Insert(0, pair);
-                }
+                var interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
 
-                requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                response = await wc.UploadDataTaskAsync(
-                    new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
-                var detailedStatus =
-                    XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
+                timer = new Timer(async state =>
+                        {
+                            foreach (var pair in status.RecipientStatusPairs)
+                            {
+                                RecipientStatusCollection.Insert(0, pair);
+                            }
+
+                            requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
+                            response = await wc.UploadDataTaskAsync(
+                                new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
+                            var detailedStatus =
+                                XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
 
 
 
-                if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
-                    detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
-                {
-                    SetStatusCodeAtUI(detailedStatus.Status);
+                            if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
+                                detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
+                            {
+                                //Stop timer
+                                if (timer != null)
+                                    timer.Dispose();
 
-                    foreach (var message in detailedStatus.Messages)
-                    {
-                        RecipientStatusCollection.Insert(0, message.RecipientStatusPair);
-                    }
+                                SetStatusCodeAtUI(detailedStatus.Status);
 
-                    XmlDataWorker.SetTels(detailedStatus.Messages
-                        .Where(x =>
-                            x.RecipientStatusPair.Status != "STOPED" &&
-                            x.RecipientStatusPair.Status != "USERSTOPED" &&
-                            x.RecipientStatusPair.Status != "ERROR" &&
-                            x.RecipientStatusPair.Status != "ALFANAMELIMITED")
-                        .Select(x => x.RecipientStatusPair.Recipient));
-                }
+                                foreach (var message in detailedStatus.Messages)
+                                {
+                                    RecipientStatusCollection.Insert(0, message.RecipientStatusPair);
+                                }
+
+                                XmlDataWorker.SetTels(detailedStatus.Messages
+                                    .Where(x =>
+                                        x.RecipientStatusPair.Status != "STOPED" &&
+                                        x.RecipientStatusPair.Status != "USERSTOPED" &&
+                                        x.RecipientStatusPair.Status != "ERROR" &&
+                                        x.RecipientStatusPair.Status != "ALFANAMELIMITED")
+                                    .Select(x => x.RecipientStatusPair.Recipient));
+
+                                MessageBox.Show("Work is done");
+                            }
+                            else
+                            {
+                                //Continue timer loop
+                                if (timer != null)
+                                    timer.Change(interval, Timeout.Infinite);
+
+                            }
+                        }, null, 0, Timeout.Infinite);
             }
             else
             {
