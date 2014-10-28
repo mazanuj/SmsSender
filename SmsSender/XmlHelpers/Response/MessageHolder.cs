@@ -1,10 +1,11 @@
 ﻿namespace SmsSender.XmlHelpers.Response
 {
+    using System.Collections.Generic;
+
     public class MessageHolder
     {
-        public string Phone { get; set; }
         public byte Part { get; set; }
         public byte Parts { get; set; }
-        public string Status { get; set; }
+        public RecipientStatusPair RecipientStatusPair { get; set; }
     }
 }

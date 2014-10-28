@@ -101,6 +101,7 @@
     <Compile Include="XmlHelpers\Response\DetailedMessageStatusResponse.cs" />
     <Compile Include="XmlHelpers\Response\MessageHolder.cs" />
     <Compile Include="XmlHelpers\Response\MessageSendingResponse.cs" />
+    <Compile Include="XmlHelpers\Response\RecipientStatusPair.cs" />
     <Compile Include="XmlHelpers\Response\StatusCodeEnum.cs" />
     <Compile Include="XmlHelpers\Response\XmlResponse.cs" />
     <Compile Include="XmlHelpers\Request\XmlRequest.cs" />

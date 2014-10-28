@@ -13,6 +13,8 @@ using System.Xml.XPath;
 namespace SmsSender.ViewModels
 {
     using System;
+    using System.Collections.ObjectModel;
+
     using Caliburn.Micro;
     using Microsoft.Win32;
     using System.ComponentModel.Composition;
@@ -20,14 +22,16 @@ namespace SmsSender.ViewModels
 
     using XmlHelpers.Request;
 
-    [Export(typeof (MainViewModel))]
+    [Export(typeof(MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
-        private Byte rate = 1;
+        private Byte rate = 120;
         private bool autoStartDate;
         private bool autoEndDate;
         private string recipientsFile, body, source;
         private DateTime startDate, endDate;
+
+        public ObservableCollection<RecipientStatusPair> RecipientStatusCollection { get; private set; }
 
         public DateTime StartDate
         {
@@ -114,10 +118,12 @@ namespace SmsSender.ViewModels
         [ImportingConstructor]
         public MainViewModel()
         {
+            RecipientStatusCollection = new ObservableCollection<RecipientStatusPair>();
+
             StartDate = DateTime.Now;
             EndDate = DateTime.Now;
 
-            RateLabel = 1;
+            RateLabel = 120;
             AutoStartDate = true;
             AutoEndDate = true;
         }
@@ -180,7 +186,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient {Credentials = new NetworkCredential("380635796623", "P@ssw0rd")};
+            var wc = new WebClient { Credentials = new NetworkCredential("380635796623", "P@ssw0rd") };
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -191,7 +197,11 @@ namespace SmsSender.ViewModels
             if (status.Code == StatusCodeEnum.ACCEPT)
             {
                 //TODO timer + list rec + status          
-      
+                foreach (var pair in status.RecipientStatusPairs)
+                {
+                    RecipientStatusCollection.Insert(0, pair);
+                }
+
                 requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
                 response = await wc.UploadDataTaskAsync(
                     new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
@@ -200,23 +210,28 @@ namespace SmsSender.ViewModels
 
 
 
-                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.Status == "STOPED"))
-                    //TODO status code
+                if (detailedStatus.Status == "COMPLETE" || detailedStatus.Messages.Any(x => x.RecipientStatusPair.Status == "STOPED"))
+                //TODO status code
                 {
                     //TODO messageStatus + set status for all phones
+                    foreach (var message in detailedStatus.Messages)
+                    {
+                        RecipientStatusCollection.Insert(0, message.RecipientStatusPair);
+                    }
+
                     XmlDataWorker.SetTels(detailedStatus.Messages
                         .Where(x =>
-                            x.Status != "STOPED" &&
-                            x.Status != "USERSTOPED" &&
-                            x.Status != "ERROR" &&
-                            x.Status != "ALFANAMELIMITED")
-                        .Select(x => x.Phone));
+                            x.RecipientStatusPair.Status != "STOPED" &&
+                            x.RecipientStatusPair.Status != "USERSTOPED" &&
+                            x.RecipientStatusPair.Status != "ERROR" &&
+                            x.RecipientStatusPair.Status != "ALFANAMELIMITED")
+                        .Select(x => x.RecipientStatusPair.Recipient));
                 }
             }
             else
             {
                 //TODO запись на форму status.Code
-                File.WriteAllText("request.xml",requestXml);
+                File.WriteAllText("request.xml", requestXml);
                 File.WriteAllText("response.xml", responseXml);
             }
         }

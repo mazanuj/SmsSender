@@ -1,5 +1,6 @@
 ﻿namespace SmsSender.XmlHelpers.Response
 {
+    using System.Collections.Generic;
     using System.Xml.Linq;
     using System.Xml.XPath;
 
@@ -52,13 +53,25 @@
                         responseHolder.Code = StatusCodeEnum.INSUFFICIENTFUNDS;
                         break;
                 }
-            }            
+            }
 
             var date = stateElement.Attribute("date").Value;
             if (!string.IsNullOrEmpty(date)) responseHolder.Date = date;
 
             var value = stateElement.Value;
             if (!string.IsNullOrEmpty(value)) responseHolder.Value = value;
+
+            //recipients
+            var toElements = doc.XPathSelectElements("//to");
+
+            foreach (var toElement in toElements)
+            {
+                responseHolder.RecipientStatusPairs.Add(new RecipientStatusPair
+                                                            {
+                                                                Recipient = toElement.Attribute("recipient").Value,
+                                                                Status = toElement.Attribute("status").Value
+                                                            });
+            }
 
             return responseHolder;
         }
@@ -81,10 +94,15 @@
             {
                 responseHolder.Messages.Add(new MessageHolder
                 {
-                    Phone = messageElement.Attribute("phone").Value,
+                    RecipientStatusPair = new RecipientStatusPair
+                                              {
+                                                  Recipient = messageElement.Attribute("phone").Value,
+                                                  Status = messageElement.Attribute("status").Value
+                                              },
                     Part = byte.Parse(messageElement.Attribute("part").Value),
                     Parts = byte.Parse(messageElement.Attribute("parts").Value),
-                    Status = messageElement.Attribute("status").Value
+
+
                 });
             }
 
