@@ -236,10 +236,20 @@ namespace SmsSender.ViewModels
 
                         foreach (var message in detailedStatus.Messages)
                         {
+                            var msg = message;
+
                             Application.Current.Dispatcher.BeginInvoke(
                                 DispatcherPriority.Background,
                                 new System.Action(
-                                    () => RecipientStatusCollection.Insert(0, message.RecipientStatusPair)));
+                                    () =>
+                                    {
+                                        var pair =
+                                            RecipientStatusCollection.Single(
+                                                x => x.Recipient == msg.RecipientStatusPair.Recipient);
+
+                                        if (pair != null) pair.Status = msg.RecipientStatusPair.Status;
+
+                                    }));
                         }
 
                         XmlDataWorker.SetTels(detailedStatus.Messages
