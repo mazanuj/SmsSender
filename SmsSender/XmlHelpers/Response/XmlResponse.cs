@@ -67,10 +67,10 @@
             foreach (var toElement in toElements)
             {
                 responseHolder.RecipientStatusPairs.Add(new RecipientStatusPair
-                                                            {
-                                                                Recipient = toElement.Attribute("recipient").Value,
-                                                                Status = toElement.Attribute("status").Value
-                                                            });
+                {
+                    Recipient = toElement.Attribute("recipient").Value,
+                    Status = toElement.Attribute("status").Value
+                });
             }
 
             return responseHolder;

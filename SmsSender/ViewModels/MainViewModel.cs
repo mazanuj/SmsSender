@@ -1,4 +1,6 @@
-﻿namespace SmsSender.ViewModels
+﻿using System.Windows.Threading;
+
+namespace SmsSender.ViewModels
 {
     ﻿using Caliburn.Micro;
     using Microsoft.Win32;
@@ -182,12 +184,16 @@
             phonesList = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
             if (phonesList.Count == 0)
                 return;
-            parameters.Recipients = phonesList;
+
+            foreach (var phone in phonesList.TakeWhile(phone => parameters.Recipients.Count < NumberLimit))
+            {
+                parameters.Recipients.Add(phone);
+            }
 
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient { Credentials = new NetworkCredential("380635796623", "P@ssw0rd") };
+            var wc = new WebClient { Credentials = new NetworkCredential("380673432372", "agronom") };
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -202,52 +208,58 @@
                 var interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
 
                 timer = new Timer(async state =>
+                {
+                    foreach (var pair in status.RecipientStatusPairs)
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(
+                            DispatcherPriority.Background,
+                            new System.Action(
+                                () => RecipientStatusCollection.Insert(0, pair)));
+                    }
+
+                    requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
+                    response = await wc.UploadDataTaskAsync(
+                        new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
+                    var detailedStatus =
+                        XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
+
+
+
+                    if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
+                        detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
+                    {
+                        //Stop timer
+                        if (timer != null)
+                            timer.Dispose();
+
+                        SetStatusCodeAtUI(detailedStatus.Status);
+
+                        foreach (var message in detailedStatus.Messages)
                         {
-                            foreach (var pair in status.RecipientStatusPairs)
-                            {
-                                RecipientStatusCollection.Insert(0, pair);
-                            }
+                            Application.Current.Dispatcher.BeginInvoke(
+                                DispatcherPriority.Background,
+                                new System.Action(
+                                    () => RecipientStatusCollection.Insert(0, message.RecipientStatusPair)));
+                        }
 
-                            requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                            response = await wc.UploadDataTaskAsync(
-                                new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
-                            var detailedStatus =
-                                XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
+                        XmlDataWorker.SetTels(detailedStatus.Messages
+                            .Where(x =>
+                                x.RecipientStatusPair.Status != "STOPED" &&
+                                x.RecipientStatusPair.Status != "USERSTOPED" &&
+                                x.RecipientStatusPair.Status != "ERROR" &&
+                                x.RecipientStatusPair.Status != "ALFANAMELIMITED")
+                            .Select(x => x.RecipientStatusPair.Recipient));
 
+                        MessageBox.Show("Work is done");
+                    }
+                    else
+                    {
+                        //Continue timer loop
+                        if (timer != null)
+                            timer.Change(interval, Timeout.Infinite);
 
-
-                            if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
-                                detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
-                            {
-                                //Stop timer
-                                if (timer != null)
-                                    timer.Dispose();
-
-                                SetStatusCodeAtUI(detailedStatus.Status);
-
-                                foreach (var message in detailedStatus.Messages)
-                                {
-                                    RecipientStatusCollection.Insert(0, message.RecipientStatusPair);
-                                }
-
-                                XmlDataWorker.SetTels(detailedStatus.Messages
-                                    .Where(x =>
-                                        x.RecipientStatusPair.Status != "STOPED" &&
-                                        x.RecipientStatusPair.Status != "USERSTOPED" &&
-                                        x.RecipientStatusPair.Status != "ERROR" &&
-                                        x.RecipientStatusPair.Status != "ALFANAMELIMITED")
-                                    .Select(x => x.RecipientStatusPair.Recipient));
-
-                                MessageBox.Show("Work is done");
-                            }
-                            else
-                            {
-                                //Continue timer loop
-                                if (timer != null)
-                                    timer.Change(interval, Timeout.Infinite);
-
-                            }
-                        }, null, 0, Timeout.Infinite);
+                    }
+                }, null, 0, Timeout.Infinite);
             }
             else
             {
