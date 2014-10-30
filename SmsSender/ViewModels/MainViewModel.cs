@@ -193,7 +193,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient { Credentials = new NetworkCredential("380673432372", "agronom") };
+            var wc = new WebClient { Credentials = new NetworkCredential("380938666666", "1358888t") };
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
 
@@ -209,8 +209,9 @@ namespace SmsSender.ViewModels
 
                 timer = new Timer(async state =>
                 {
-                    foreach (var pair in status.RecipientStatusPairs)
+                    foreach (var tair in status.RecipientStatusPairs)
                     {
+                        var pair = tair;
                         Application.Current.Dispatcher.BeginInvoke(
                             DispatcherPriority.Background,
                             new System.Action(
@@ -226,7 +227,7 @@ namespace SmsSender.ViewModels
 
 
                     if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
-                        detailedStatus.Messages.All(x => x.RecipientStatusPair.Status != "STOPED"))
+                        detailedStatus.Messages.Any(x => x.RecipientStatusPair.Status == "STOPED"))
                     {
                         //Stop timer
                         if (timer != null)
