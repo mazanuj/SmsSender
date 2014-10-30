@@ -112,18 +112,20 @@ namespace SmsSender.ViewModels
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
         public bool CanButtonStart { get; set; }
+        public bool StatusCodeColorBool { get; set; }
         public string StatusCode { get; set; }
         public int NumberLimit { get; set; }
 
         [ImportingConstructor]
         public MainViewModel()
         {
+            LoadSavedSettings();
+
             RecipientStatusCollection = new ObservableCollection<RecipientStatusPair>();
 
             StartDate = DateTime.Now;
             EndDate = DateTime.Now;
 
-            RateLabel = 120;
             AutoStartDate = true;
             AutoEndDate = true;
         }
@@ -148,8 +150,11 @@ namespace SmsSender.ViewModels
 
         public async void ButtonStart()
         {
+            ChangeButtonStartEnabledStatus(false);
+            ChangeStatusCodeColor(false);
             SetStatusCodeAtUI(string.Empty);
             RecipientStatusCollection.Clear();
+            SaveSettings();
 
             var parameters = new ParamsForMessageSending
             {
@@ -260,7 +265,8 @@ namespace SmsSender.ViewModels
                                 x.RecipientStatusPair.Status != "ALFANAMELIMITED")
                             .Select(x => x.RecipientStatusPair.Recipient));
 
-                        MessageBox.Show("Work is done");
+                        ChangeButtonStartEnabledStatus(true);
+                        ChangeStatusCodeColor(true);
                     }
                     else
                     {
@@ -284,6 +290,18 @@ namespace SmsSender.ViewModels
         {
             CanButtonStart = CheckIfAllFieldsAreFilled();
             NotifyOfPropertyChange(() => CanButtonStart);
+        }
+
+        private void ChangeButtonStartEnabledStatus(bool status)
+        {
+            CanButtonStart = status;
+            NotifyOfPropertyChange(() => CanButtonStart);
+        }
+
+        private void ChangeStatusCodeColor(bool status)
+        {
+            StatusCodeColorBool = status;
+            NotifyOfPropertyChange(() => StatusCodeColorBool);
         }
 
         private bool CheckIfAllFieldsAreFilled()
@@ -312,6 +330,29 @@ namespace SmsSender.ViewModels
         {
             StatusCode = statusCode;
             NotifyOfPropertyChange(() => StatusCode);
+        }
+
+        private void LoadSavedSettings()
+        {
+            var value = XmlSettingsWorker.GetValue("rate");
+            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value) : (byte)120;
+
+            value = XmlSettingsWorker.GetValue("source");
+            Source = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("body");
+            Body = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("numberlimit");
+            NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
+        }
+
+        private void SaveSettings()
+        {
+            XmlSettingsWorker.SetValue("rate", Rate.ToString());
+            XmlSettingsWorker.SetValue("source", Source);
+            XmlSettingsWorker.SetValue("body", Body);
+            XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString());
         }
     }
 }

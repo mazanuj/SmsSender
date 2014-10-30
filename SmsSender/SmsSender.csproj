@@ -107,6 +107,7 @@
     <Compile Include="XmlHelpers\Request\XmlRequest.cs" />
     <Compile Include="XmlHelpers\Request\ParamsForMessageSending.cs" />
     <Compile Include="XmlHelpers\XmlDataWorker.cs" />
+    <Compile Include="XmlHelpers\XmlSettingsWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -137,6 +138,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Settings.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="SP.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
