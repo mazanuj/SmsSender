@@ -112,20 +112,18 @@ namespace SmsSender.ViewModels
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
         public bool CanButtonStart { get; set; }
-        public bool StatusCodeColorBool { get; set; }
         public string StatusCode { get; set; }
         public int NumberLimit { get; set; }
 
         [ImportingConstructor]
         public MainViewModel()
         {
-            LoadSavedSettings();
-
             RecipientStatusCollection = new ObservableCollection<RecipientStatusPair>();
 
             StartDate = DateTime.Now;
             EndDate = DateTime.Now;
 
+            RateLabel = 120;
             AutoStartDate = true;
             AutoEndDate = true;
         }
@@ -150,11 +148,8 @@ namespace SmsSender.ViewModels
 
         public async void ButtonStart()
         {
-            ChangeButtonStartEnabledStatus(false);
-            ChangeStatusCodeColor(false);
             SetStatusCodeAtUI(string.Empty);
             RecipientStatusCollection.Clear();
-            SaveSettings();
 
             var parameters = new ParamsForMessageSending
             {
@@ -200,9 +195,9 @@ namespace SmsSender.ViewModels
             //send request
             var wc = new WebClient { Credentials = new NetworkCredential("380938666666", "1358888t") };
             var response = await wc.UploadDataTaskAsync(
-                new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
+                new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
 
-            var responseXml = Encoding.Default.GetString(response);
+            var responseXml = Encoding.UTF8.GetString(response);
             //recv response
             var status = XmlResponse.ProcessMessageSendingResponse(responseXml);
 
@@ -210,28 +205,46 @@ namespace SmsSender.ViewModels
             {
                 SetStatusCodeAtUI(status.Code.ToString());
 
+                foreach (var tair in status.RecipientStatusPairs)
+                {
+                    var pair = tair;
+                    Application.Current.Dispatcher.BeginInvoke(
+                        DispatcherPriority.Background,
+                        new System.Action(
+                            () => RecipientStatusCollection.Insert(0, pair)));
+                }
+
                 var interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
 
                 timer = new Timer(async state =>
-                {
-                    foreach (var tair in status.RecipientStatusPairs)
+                {                    
+                    requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
+                    response = await wc.UploadDataTaskAsync(
+                        new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                    var detailedStatus =
+                        XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.UTF8.GetString(response));
+
+                    foreach (var message in detailedStatus.Messages)
                     {
-                        var pair = tair;
+                        var msg = message;
+
                         Application.Current.Dispatcher.BeginInvoke(
                             DispatcherPriority.Background,
                             new System.Action(
-                                () => RecipientStatusCollection.Insert(0, pair)));
+                                () =>
+                                {
+                                    var pair =
+                                        RecipientStatusCollection.Single(
+                                            x => x.Recipient == msg.RecipientStatusPair.Recipient);
+
+                                    if (pair != null) pair.Status = msg.RecipientStatusPair.Status;
+
+                                }));
                     }
 
-                    requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                    response = await wc.UploadDataTaskAsync(
-                        new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.Default.GetBytes(requestXml));
-                    var detailedStatus =
-                        XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.Default.GetString(response));
-
-
-
-                    if ((detailedStatus.Status != "INPROGRESS" && detailedStatus.Status != "PENDING") ||
+                    if ((detailedStatus.Status != "INPROGRESS" &&
+                         detailedStatus.Status != "WORKING" &&
+                         detailedStatus.Status != "PENDING") ||
                         detailedStatus.Messages.Any(x => x.RecipientStatusPair.Status == "STOPED"))
                     {
                         //Stop timer
@@ -240,24 +253,6 @@ namespace SmsSender.ViewModels
 
                         SetStatusCodeAtUI(detailedStatus.Status);
 
-                        foreach (var message in detailedStatus.Messages)
-                        {
-                            var msg = message;
-
-                            Application.Current.Dispatcher.BeginInvoke(
-                                DispatcherPriority.Background,
-                                new System.Action(
-                                    () =>
-                                    {
-                                        var pair =
-                                            RecipientStatusCollection.Single(
-                                                x => x.Recipient == msg.RecipientStatusPair.Recipient);
-
-                                        if (pair != null) pair.Status = msg.RecipientStatusPair.Status;
-
-                                    }));
-                        }
-
                         XmlDataWorker.SetTels(detailedStatus.Messages
                             .Where(x =>
                                 x.RecipientStatusPair.Status != "STOPED" &&
@@ -265,9 +260,6 @@ namespace SmsSender.ViewModels
                                 x.RecipientStatusPair.Status != "ERROR" &&
                                 x.RecipientStatusPair.Status != "ALFANAMELIMITED")
                             .Select(x => x.RecipientStatusPair.Recipient));
-
-                        ChangeButtonStartEnabledStatus(true);
-                        ChangeStatusCodeColor(true);
                     }
                     else
                     {
@@ -291,18 +283,6 @@ namespace SmsSender.ViewModels
         {
             CanButtonStart = CheckIfAllFieldsAreFilled();
             NotifyOfPropertyChange(() => CanButtonStart);
-        }
-
-        private void ChangeButtonStartEnabledStatus(bool status)
-        {
-            CanButtonStart = status;
-            NotifyOfPropertyChange(() => CanButtonStart);
-        }
-
-        private void ChangeStatusCodeColor(bool status)
-        {
-            StatusCodeColorBool = status;
-            NotifyOfPropertyChange(() => StatusCodeColorBool);
         }
 
         private bool CheckIfAllFieldsAreFilled()
@@ -331,29 +311,6 @@ namespace SmsSender.ViewModels
         {
             StatusCode = statusCode;
             NotifyOfPropertyChange(() => StatusCode);
-        }
-
-        private void LoadSavedSettings()
-        {
-            var value = XmlSettingsWorker.GetValue("rate");
-            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value) : (byte)120;
-
-            value = XmlSettingsWorker.GetValue("source");
-            Source = !string.IsNullOrEmpty(value) ? value : string.Empty;
-
-            value = XmlSettingsWorker.GetValue("body");
-            Body = !string.IsNullOrEmpty(value) ? value : string.Empty;
-
-            value = XmlSettingsWorker.GetValue("numberlimit");
-            NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
-        }
-
-        private void SaveSettings()
-        {
-            XmlSettingsWorker.SetValue("rate", Rate.ToString());
-            XmlSettingsWorker.SetValue("source", Source);
-            XmlSettingsWorker.SetValue("body", Body);
-            XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString());
         }
     }
 }
