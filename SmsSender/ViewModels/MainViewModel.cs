@@ -224,11 +224,20 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient { Credentials = new NetworkCredential("380938666666", "1358888t") };
+
+            var wc = new WebClient { Credentials = new NetworkCredential(Login, Password) };
+
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
 
             var responseXml = Encoding.UTF8.GetString(response);
+
+            if (responseXml.Contains("Access denied!"))
+            {
+                SetStatusCodeAtUI("INCORECT LOGIN OR PASSWORD");
+                return;
+            }
+
             //recv response
             var status = XmlResponse.ProcessMessageSendingResponse(responseXml);
 
