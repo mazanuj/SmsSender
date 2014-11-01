@@ -18,13 +18,13 @@ namespace SmsSender.ViewModels
     using System.Windows;
     using XmlHelpers.Request;
 
-    [Export(typeof (MainViewModel))]
+    [Export(typeof(MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
         private bool autoStartDate;
         private bool autoEndDate;
-        private string recipientsFile, body, source;
+        private string recipientsFile, body, source, login, password;
         private DateTime startDate, endDate;
 
         private Timer timer;
@@ -108,6 +108,26 @@ namespace SmsSender.ViewModels
             }
         }
 
+        public string Login
+        {
+            get { return login; }
+            set
+            {
+                login = value;
+                GetButtonStartEnabledStatus();
+            }
+        }
+
+        public string Password
+        {
+            get { return password; }
+            set
+            {
+                password = value;
+                GetButtonStartEnabledStatus();
+            }
+        }
+
         public bool RecipientsFileLabel { get; set; }
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
@@ -183,12 +203,18 @@ namespace SmsSender.ViewModels
             }
 
             if (phonesList.Count == 0)
+            {
+                SetStatusCodeAtUI("EMPTY NUMBER LIST");
                 return;
+            }
 
             var phonesInBase = XmlDataWorker.GetTels("SP.xml");
             phonesList = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
             if (phonesList.Count == 0)
+            {
+                SetStatusCodeAtUI("EMPTY NUMBER LIST");
                 return;
+            }
 
             foreach (var phone in phonesList.TakeWhile(phone => parameters.Recipients.Count < NumberLimit))
             {
@@ -198,7 +224,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient {Credentials = new NetworkCredential("380938666666", "1358888t")};
+            var wc = new WebClient { Credentials = new NetworkCredential("380938666666", "1358888t") };
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
 
@@ -317,7 +343,8 @@ namespace SmsSender.ViewModels
         private bool CheckIfSomeFieldsAreFilled()
         {
             return !string.IsNullOrEmpty(Source) && !string.IsNullOrEmpty(Body) &&
-                   !string.IsNullOrEmpty(recipientsFile);
+                   !string.IsNullOrEmpty(recipientsFile) && !string.IsNullOrEmpty(Login)
+                   && !string.IsNullOrEmpty(Password);
         }
 
         private static bool CheckDates(DateTime start, DateTime end)
@@ -333,8 +360,14 @@ namespace SmsSender.ViewModels
 
         private void LoadSavedSettings()
         {
-            var value = XmlSettingsWorker.GetValue("rate");
-            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value): (byte) 120;
+            var value = XmlSettingsWorker.GetValue("login");
+            Login = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("password");
+            Password = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("rate");
+            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value) : (byte)120;
 
             value = XmlSettingsWorker.GetValue("source");
             Source = !string.IsNullOrEmpty(value) ? value : string.Empty;
@@ -348,6 +381,8 @@ namespace SmsSender.ViewModels
 
         private void SaveSettings()
         {
+            XmlSettingsWorker.SetValue("login", Login);
+            XmlSettingsWorker.SetValue("password", Password);
             XmlSettingsWorker.SetValue("rate", Rate.ToString());
             XmlSettingsWorker.SetValue("source", Source);
             XmlSettingsWorker.SetValue("body", Body);
