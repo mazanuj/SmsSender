@@ -214,7 +214,6 @@ namespace SmsSender.ViewModels
                 {
                     var pair = tair;
                     Application.Current.Dispatcher.BeginInvoke(
-                        DispatcherPriority.Background,
                         new System.Action(
                             () => RecipientStatusCollection.Insert(0, pair)));
                 }
@@ -234,7 +233,6 @@ namespace SmsSender.ViewModels
                         var msg = message;
 
                         Application.Current.Dispatcher.BeginInvoke(
-                            DispatcherPriority.Background,
                             new System.Action(
                                 () =>
                                 {

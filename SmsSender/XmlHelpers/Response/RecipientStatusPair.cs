@@ -1,8 +1,39 @@
 ﻿namespace SmsSender.XmlHelpers.Response
 {
-    public class RecipientStatusPair
+    using System.ComponentModel;
+
+    public class RecipientStatusPair : INotifyPropertyChanged
     {
+        private string status;
+
         public string Recipient { get; set; }
-        public string Status { get; set; }
+        public string Status
+        {
+            get
+            {
+                return status;
+            }
+            set
+            {
+                if (status == value)
+                    return;
+                status = value;
+                if (PropertyChanged != null)
+                    SendPropertyChanged("Status");
+            }
+        }
+
+        private void SendPropertyChanged(string propertyName)
+        {
+            var handler = this.PropertyChanged;
+            if (handler != null)
+            {
+                var e = new PropertyChangedEventArgs(propertyName);
+                this.PropertyChanged(this, e);
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
     }
 }
