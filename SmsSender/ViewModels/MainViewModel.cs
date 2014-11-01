@@ -2,10 +2,10 @@
 
 namespace SmsSender.ViewModels
 {
-    ﻿using Caliburn.Micro;
+    using Caliburn.Micro;
     using Microsoft.Win32;
-    using SmsSender.XmlHelpers;
-    using SmsSender.XmlHelpers.Response;
+    using XmlHelpers;
+    using XmlHelpers.Response;
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
@@ -18,7 +18,7 @@ namespace SmsSender.ViewModels
     using System.Windows;
     using XmlHelpers.Request;
 
-    [Export(typeof(MainViewModel))]
+    [Export(typeof (MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
@@ -113,17 +113,19 @@ namespace SmsSender.ViewModels
         public bool CanEndDate { get; set; }
         public bool CanButtonStart { get; set; }
         public string StatusCode { get; set; }
+        public bool StatusCodeColorBool { get; set; }
         public int NumberLimit { get; set; }
 
         [ImportingConstructor]
         public MainViewModel()
         {
+            LoadSavedSettings();
+
             RecipientStatusCollection = new ObservableCollection<RecipientStatusPair>();
 
             StartDate = DateTime.Now;
             EndDate = DateTime.Now;
 
-            RateLabel = 120;
             AutoStartDate = true;
             AutoEndDate = true;
         }
@@ -148,8 +150,11 @@ namespace SmsSender.ViewModels
 
         public async void ButtonStart()
         {
+            ChangeButtonStartEnabledStatus(false);
+            ChangeStatusCodeColor(false);
             SetStatusCodeAtUI(string.Empty);
             RecipientStatusCollection.Clear();
+            SaveSettings();
 
             var parameters = new ParamsForMessageSending
             {
@@ -193,7 +198,7 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-            var wc = new WebClient { Credentials = new NetworkCredential("380938666666", "1358888t") };
+            var wc = new WebClient {Credentials = new NetworkCredential("380938666666", "1358888t")};
             var response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
 
@@ -217,7 +222,7 @@ namespace SmsSender.ViewModels
                 var interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
 
                 timer = new Timer(async state =>
-                {                    
+                {
                     requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
                     response = await wc.UploadDataTaskAsync(
                         new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
@@ -260,6 +265,9 @@ namespace SmsSender.ViewModels
                                 x.RecipientStatusPair.Status != "ERROR" &&
                                 x.RecipientStatusPair.Status != "ALFANAMELIMITED")
                             .Select(x => x.RecipientStatusPair.Recipient));
+
+                        ChangeButtonStartEnabledStatus(true);
+                        ChangeStatusCodeColor(true);
                     }
                     else
                     {
@@ -283,6 +291,18 @@ namespace SmsSender.ViewModels
         {
             CanButtonStart = CheckIfAllFieldsAreFilled();
             NotifyOfPropertyChange(() => CanButtonStart);
+        }
+
+        private void ChangeButtonStartEnabledStatus(bool status)
+        {
+            CanButtonStart = status;
+            NotifyOfPropertyChange(() => CanButtonStart);
+        }
+
+        private void ChangeStatusCodeColor(bool status)
+        {
+            StatusCodeColorBool = status;
+            NotifyOfPropertyChange(() => StatusCodeColorBool);
         }
 
         private bool CheckIfAllFieldsAreFilled()
@@ -311,6 +331,29 @@ namespace SmsSender.ViewModels
         {
             StatusCode = statusCode;
             NotifyOfPropertyChange(() => StatusCode);
+        }
+
+        private void LoadSavedSettings()
+        {
+            var value = XmlSettingsWorker.GetValue("rate");
+            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value): (byte) 120;
+
+            value = XmlSettingsWorker.GetValue("source");
+            Source = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("body");
+            Body = !string.IsNullOrEmpty(value) ? value : string.Empty;
+
+            value = XmlSettingsWorker.GetValue("numberlimit");
+            NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
+        }
+
+        private void SaveSettings()
+        {
+            XmlSettingsWorker.SetValue("rate", Rate.ToString());
+            XmlSettingsWorker.SetValue("source", Source);
+            XmlSettingsWorker.SetValue("body", Body);
+            XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString());
         }
     }
 }

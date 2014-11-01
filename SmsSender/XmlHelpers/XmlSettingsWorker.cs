@@ -3,7 +3,7 @@
     using System.Xml.Linq;
     using System.Xml.XPath;
 
-    public class XmlSettingsWorker
+    public static class XmlSettingsWorker
     {
         private const string XmlFilePath = "Settings.xml";
 
