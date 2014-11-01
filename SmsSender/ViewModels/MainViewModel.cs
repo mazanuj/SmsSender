@@ -334,7 +334,7 @@ namespace SmsSender.ViewModels
         private void LoadSavedSettings()
         {
             var value = XmlSettingsWorker.GetValue("rate");
-            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value): (byte) 120;
+            Rate = !string.IsNullOrEmpty(value) ? byte.Parse(value) : (byte) 120;
 
             value = XmlSettingsWorker.GetValue("source");
             Source = !string.IsNullOrEmpty(value) ? value : string.Empty;
