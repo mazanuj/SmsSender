@@ -284,7 +284,8 @@ namespace SmsSender.ViewModels
                     }
                     catch (Exception)
                     {
-                        SetStatusCodeAtUI("Internet connection problem");
+                        Application.Current.Dispatcher.BeginInvoke(
+                            new System.Action(() => SetStatusCodeAtUI("Internet connection problem")));
                         return;
                     }
 
