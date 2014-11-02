@@ -235,10 +235,19 @@ namespace SmsSender.ViewModels
 
             //send request
 
-            var wc = new WebClient { Credentials = new NetworkCredential(Login, Password) };
-
-            var response = await wc.UploadDataTaskAsync(
+            WebClient wc;
+            Byte[] response;
+            try
+            {
+                wc = new WebClient { Credentials = new NetworkCredential(Login, Password) };
+                response = await wc.UploadDataTaskAsync(
                 new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+            }
+            catch (Exception)
+            {
+                SetStatusCodeAtUI("Internet connection problem");
+                return;
+            }
 
             var responseXml = Encoding.UTF8.GetString(response);
 
@@ -268,8 +277,17 @@ namespace SmsSender.ViewModels
                 timer = new Timer(async state =>
                 {
                     requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                    response = await wc.UploadDataTaskAsync(
-                        new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                    try
+                    {
+                        response = await wc.UploadDataTaskAsync(
+                            new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                    }
+                    catch (Exception)
+                    {
+                        SetStatusCodeAtUI("Internet connection problem");
+                        return;
+                    }
+
                     var detailedStatus =
                         XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.UTF8.GetString(response));
 
