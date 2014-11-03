@@ -1,7 +1,9 @@
-﻿<Window x:Class="SmsSender.Views.MainView"
+﻿<Controls:MetroWindow x:Class="SmsSender.Views.MainView"
+        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        xmlns:cal="http://www.caliburnproject.org"
         Title="SmsSender" Height="500" Width="750" Icon="/SmsSender;component/SMS.ico">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -24,7 +26,7 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal">
                 <Button x:Name="ButtonStart" Content="Start" Width="130" Height="25" HorizontalAlignment="Left" Margin="10"/>
                 <TextBlock Text="Status Code:" Margin="10"/>
-                <TextBlock x:Name="StatusCode" Margin="0, 10, 0, 10" Background="{Binding StatusCodeColorBool, Converter={StaticResource BoolToColorConverter}}"/>
+                <TextBlock x:Name="StatusCode" Margin="0, 10, 0, 10" Foreground="{Binding StatusCodeColorBool, Converter={StaticResource BoolToColorConverter}}"/>
             </StackPanel>
 
 
@@ -51,7 +53,7 @@
                 <TextBox x:Name="Password" Grid.Column="1" Grid.Row="1" Width="150" Margin="5"/>
 
             </Grid>
-            
+
             <Grid Row="3" Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"></RowDefinition>
@@ -87,9 +89,24 @@
 
             <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="10">
                 <TextBlock Text="Body:"/>
-                <TextBox x:Name="Body" Width="200" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Margin="5, 0, 0, 0"/>
+                <TextBox x:Name="Body" Width="200" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" AcceptsReturn="True" Margin="5, 0, 0, 0"
+                         cal:Message.Attach="[Event TextChanged] = [Action BodyTextChanged($eventArgs)]"/>
+                <StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Symbol count: " />
+                        <TextBlock x:Name="SymbolCount" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="SMS count: " />
+                        <TextBlock x:Name="SmsCount" />
+                    </StackPanel>
+
+
+                </StackPanel>
             </StackPanel>
-            
+
             <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="10">
                 <TextBlock Text="Number limit: "/>
                 <xctk:IntegerUpDown Value="{Binding NumberLimit}"/>
@@ -97,16 +114,20 @@
         </Grid>
 
         <Grid Column="1">
-            <ListView x:Name="RecipientStatusCollection" SelectionMode="Single" Margin="0, 0, 5, 0">
+            <Border Background="LightCyan" 
+            BorderBrush="LightSteelBlue" 
+            BorderThickness="2">
+                <ListView x:Name="RecipientStatusCollection" SelectionMode="Single" Margin="0, 0, 5, 0">
 
-                <ListView.View>
-                    <GridView  >
-                        <GridViewColumn Header="Recipient" DisplayMemberBinding="{Binding Recipient}" Width="150"/>
-                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="150"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
+                    <ListView.View>
+                        <GridView  >
+                            <GridViewColumn Header="Recipient" DisplayMemberBinding="{Binding Recipient}" Width="150"/>
+                            <GridViewColumn Header="Status" DisplayMemberBinding="{Binding Status}" Width="150"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
         </Grid>
 
     </Grid>
-</Window>
+</Controls:MetroWindow>

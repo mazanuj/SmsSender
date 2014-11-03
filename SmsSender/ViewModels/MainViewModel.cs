@@ -2,6 +2,9 @@
 
 namespace SmsSender.ViewModels
 {
+    using System.Windows.Controls;
+    using System.Windows.Input;
+
     using Caliburn.Micro;
     using Microsoft.Win32;
     using XmlHelpers;
@@ -135,6 +138,8 @@ namespace SmsSender.ViewModels
         public string StatusCode { get; set; }
         public bool StatusCodeColorBool { get; set; }
         public int NumberLimit { get; set; }
+        public int SymbolCount { get; set; }
+        public int SmsCount { get; set; }
 
         [ImportingConstructor]
         public MainViewModel()
@@ -150,6 +155,11 @@ namespace SmsSender.ViewModels
             AutoEndDate = true;
         }
 
+        public void BodyTextChanged(TextChangedEventArgs e)
+        {
+            RefreshSymbolAndSmsCount();
+        }
+
         public void ButtonRecipients()
         {
             var dlg = new OpenFileDialog
@@ -162,8 +172,7 @@ namespace SmsSender.ViewModels
             if (dlg.ShowDialog() == false) return;
             recipientsFile = dlg.FileName;
 
-            RecipientsFileLabel = true;
-            NotifyOfPropertyChange(() => RecipientsFileLabel);
+            ChangeRecipientsFileLabelStatus(true);
 
             GetButtonStartEnabledStatus();
         }
@@ -198,13 +207,14 @@ namespace SmsSender.ViewModels
                 }
                 catch (Exception)
                 {
-                    throw new Exception("Wrong XML format");
+                    SetStatusCodeAtUI("Wrong XML format");
+                    return;
                 }
             }
 
             if (phonesList.Count == 0)
             {
-                SetStatusCodeAtUI("EMPTY NUMBER LIST");
+                SetStatusCodeAtUI("Empty number list");
                 return;
             }
 
@@ -212,7 +222,7 @@ namespace SmsSender.ViewModels
             phonesList = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
             if (phonesList.Count == 0)
             {
-                SetStatusCodeAtUI("EMPTY NUMBER LIST");
+                SetStatusCodeAtUI("Empty number list");
                 return;
             }
 
@@ -224,11 +234,19 @@ namespace SmsSender.ViewModels
             var requestXml = XmlRequest.MessageSendingRequest(parameters);
 
             //send request
-
-            var wc = new WebClient {Credentials = new NetworkCredential(Login, Password)};
-
-            var response = await wc.UploadDataTaskAsync(
-                new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+            WebClient wc;
+            Byte[] response;
+            try
+            {
+                wc = new WebClient {Credentials = new NetworkCredential(Login, Password)};
+                response = await wc.UploadDataTaskAsync(
+                    new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+            }
+            catch (Exception)
+            {
+                SetStatusCodeAtUI("Internet connection problem");
+                return;
+            }
 
             var responseXml = Encoding.UTF8.GetString(response);
 
@@ -258,10 +276,23 @@ namespace SmsSender.ViewModels
                 timer = new Timer(async state =>
                 {
                     requestXml = XmlRequest.DetailedMessageStatusRequest(status.CampaignId);
-                    response = await wc.UploadDataTaskAsync(
-                        new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                    try
+                    {
+                        response = await wc.UploadDataTaskAsync(
+                            new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                    }
+                    catch (Exception)
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(
+                            new System.Action(() => SetStatusCodeAtUI("Internet connection problem")));
+                        return;
+                    }
+
                     var detailedStatus =
                         XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.UTF8.GetString(response));
+
+                    Application.Current.Dispatcher.BeginInvoke(
+                        new System.Action(() => SetStatusCodeAtUI(detailedStatus.Status)));
 
                     foreach (var message in detailedStatus.Messages)
                     {
@@ -338,6 +369,12 @@ namespace SmsSender.ViewModels
             NotifyOfPropertyChange(() => StatusCodeColorBool);
         }
 
+        private void ChangeRecipientsFileLabelStatus(bool status)
+        {
+            RecipientsFileLabel = status;
+            NotifyOfPropertyChange(() => RecipientsFileLabel);
+        }
+
         private bool CheckIfAllFieldsAreFilled()
         {
             if (AutoStartDate && AutoEndDate)
@@ -369,6 +406,12 @@ namespace SmsSender.ViewModels
 
         private void LoadSavedSettings()
         {
+            if (File.Exists("Full.xml"))
+            {
+                recipientsFile = "Full.xml";
+                ChangeRecipientsFileLabelStatus(true);
+            }
+
             var value = XmlSettingsWorker.GetValue("login");
             Login = !string.IsNullOrEmpty(value) ? value : string.Empty;
 
@@ -386,6 +429,8 @@ namespace SmsSender.ViewModels
 
             value = XmlSettingsWorker.GetValue("numberlimit");
             NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
+
+            RefreshSymbolAndSmsCount();
         }
 
         private void SaveSettings()
@@ -396,6 +441,30 @@ namespace SmsSender.ViewModels
             XmlSettingsWorker.SetValue("source", Source);
             XmlSettingsWorker.SetValue("body", Body);
             XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString());
+        }
+
+        private void RefreshSymbolAndSmsCount()
+        {
+            this.SymbolCount = this.Body.Length;
+
+            if (this.SymbolCount > 70)
+            {
+                if (this.SymbolCount % 67 == 0)
+                {
+                    this.SmsCount = this.SymbolCount / 67;
+                }
+                else
+                {
+                    this.SmsCount = (this.SymbolCount / 67) + 1;
+                }
+            }
+            else
+            {
+                this.SmsCount = 1;
+            }
+
+            this.NotifyOfPropertyChange(() => this.SymbolCount);
+            this.NotifyOfPropertyChange(() => this.SmsCount);
         }
     }
 }
