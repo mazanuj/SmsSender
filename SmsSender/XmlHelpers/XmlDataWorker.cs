@@ -11,29 +11,28 @@ namespace SmsSender.XmlHelpers
     {
         private const string XmlFilePath = @"SP.xml";
 
-        internal static IList<string> GetTels(string xmlFilePath)
+        internal static IList<string> GetTels(string xmlFilePath, string node)
         {
             var doc = XDocument.Load(xmlFilePath);
             try
             {
                 var att =
-                (IEnumerable)
-                    doc.XPathSelectElements("//tels/item").Select(x => x.Value);
+                    (IEnumerable)
+                        doc.XPathSelectElements(string.Format("//{0}/item", node)).Select(x => x.Value);
 
                 return att as IList<string> ?? att.Cast<string>().ToList();
             }
             catch (Exception)
             {
-               return new List<string>();
+                return new List<string>();
             }
-            
         }
 
-        internal static void SetTels(IEnumerable<string> values)
+        internal static void SetTels(IEnumerable<string> values, string node)
         {
             var doc = XDocument.Load(XmlFilePath);
 
-            doc.XPathSelectElement("//tels")
+            doc.XPathSelectElement("//" + node)
                 .Add(values
                     .Select(value => new XElement("item", value)));
 

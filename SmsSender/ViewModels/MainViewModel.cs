@@ -1,10 +1,12 @@
-﻿using System.Windows.Threading;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 
 namespace SmsSender.ViewModels
 {
     using System.Windows.Controls;
-    using System.Windows.Input;
-
     using Caliburn.Micro;
     using Microsoft.Win32;
     using XmlHelpers;
@@ -27,9 +29,8 @@ namespace SmsSender.ViewModels
         private Byte rate = 120;
         private bool autoStartDate;
         private bool autoEndDate;
-        private string recipientsFile, body, source, login, password;
+        private string recipientsFile, body, source, login, password, balanceLabel;
         private DateTime startDate, endDate;
-
         private Timer timer;
 
         public ObservableCollection<RecipientStatusPair> RecipientStatusCollection { get; private set; }
@@ -86,6 +87,16 @@ namespace SmsSender.ViewModels
                 rate = value;
                 RateLabel = value;
                 NotifyOfPropertyChange(() => RateLabel);
+            }
+        }
+
+        public string BalanceLabel
+        {
+            get { return balanceLabel; }
+            set
+            {
+                balanceLabel = value;
+                NotifyOfPropertyChange(() => BalanceLabel);
             }
         }
 
@@ -173,8 +184,62 @@ namespace SmsSender.ViewModels
             recipientsFile = dlg.FileName;
 
             ChangeRecipientsFileLabelStatus(true);
-
             GetButtonStartEnabledStatus();
+        }
+
+        public void ButtonMyPhones()
+        {
+            var dlg = new OpenFileDialog
+            {
+                CheckFileExists = true,
+                Filter = "File (*.xls or *.xlsx)|*.xls;*.xlsx",
+                InitialDirectory = AppDomain.CurrentDomain.BaseDirectory
+            };
+
+            if (dlg.ShowDialog() == false) return;
+
+            var fileExt = Path.GetExtension(dlg.FileName);
+            ISheet sheet;
+            try
+            {
+                if (fileExt != null && fileExt.ToLower() == ".xls")
+                {
+
+                    HSSFWorkbook hssfwb;
+                    using (var file = new FileStream(dlg.FileName, FileMode.Open, FileAccess.Read))
+                        hssfwb = new HSSFWorkbook(file);
+                    sheet = hssfwb.GetSheetAt(hssfwb.ActiveSheetIndex);
+                }
+                else
+                {
+                    XSSFWorkbook xssfwb;
+                    using (var file = new FileStream(dlg.FileName, FileMode.Open, FileAccess.Read))
+                        xssfwb = new XSSFWorkbook(file);
+                    sheet = xssfwb.GetSheetAt(xssfwb.ActiveSheetIndex);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(string.Format("Close {0} file before reading", dlg.FileName));
+                return;
+            }
+
+            var cellsValues = new List<string>();
+            for (var row = 0; row <= sheet.LastRowNum; row++)
+            {
+                if (sheet.GetRow(row) == null)
+                    continue;
+                cellsValues.Add(sheet.GetRow(row).GetCell(0).StringCellValue);
+            }
+
+            var phones = cellsValues
+                .Where(x => !string.IsNullOrEmpty(x) && x.Count() > 9)
+                .Select(x => "38" + Regex.Replace(x, @"(^\s*\+?(38)?)?(\(|\)|\s|\-)?", string.Empty))
+                .Distinct();
+            var existedPhones = XmlDataWorker.GetTels("SP.xml", "myPhones");
+
+            XmlDataWorker.SetTels(phones
+                .Where(x => !existedPhones.Contains(x)), "myPhones");
         }
 
         public async void ButtonStart()
@@ -203,7 +268,7 @@ namespace SmsSender.ViewModels
             {
                 try
                 {
-                    phonesList = XmlDataWorker.GetTels(recipientsFile).ToList();
+                    phonesList = XmlDataWorker.GetTels(recipientsFile, "tels").ToList();
                 }
                 catch (Exception)
                 {
@@ -218,8 +283,13 @@ namespace SmsSender.ViewModels
                 return;
             }
 
-            var phonesInBase = XmlDataWorker.GetTels("SP.xml");
-            phonesList = phonesList.Where(x => !phonesInBase.Contains(x)).ToList();
+            var phonesInBase = XmlDataWorker.GetTels("SP.xml", "tels");
+            var myPhones = XmlDataWorker.GetTels("SP.xml", "myPhones");
+            phonesList = phonesList
+                .Where(x => !phonesInBase.Contains(x) &&
+                            !myPhones.Contains(x))
+                .ToList();
+
             if (phonesList.Count == 0)
             {
                 SetStatusCodeAtUI("Empty number list");
@@ -320,6 +390,7 @@ namespace SmsSender.ViewModels
                         if (timer != null)
                             timer.Dispose();
 
+                        GetBalance();
                         SetStatusCodeAtUI(detailedStatus.Status);
 
                         XmlDataWorker.SetTels(detailedStatus.Messages
@@ -328,7 +399,7 @@ namespace SmsSender.ViewModels
                                 x.RecipientStatusPair.Status != "USERSTOPED" &&
                                 x.RecipientStatusPair.Status != "ERROR" &&
                                 x.RecipientStatusPair.Status != "ALFANAMELIMITED")
-                            .Select(x => x.RecipientStatusPair.Recipient));
+                            .Select(x => x.RecipientStatusPair.Recipient), "tels");
 
                         ChangeButtonStartEnabledStatus(true);
                         ChangeStatusCodeColor(true);
@@ -430,7 +501,33 @@ namespace SmsSender.ViewModels
             value = XmlSettingsWorker.GetValue("numberlimit");
             NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
 
+            GetBalance();
+
             RefreshSymbolAndSmsCount();
+        }
+
+        private async void GetBalance()
+        {
+            Byte[] response;
+            try
+            {
+                var wc = new WebClient {Credentials = new NetworkCredential(Login, Password)};
+                response = await wc.UploadDataTaskAsync(
+                    new Uri("http://sms-fly.com/api/api.php"), "POST",
+                    Encoding.UTF8.GetBytes(XmlRequest.CheckBallanceRequest()));
+            }
+            catch (Exception)
+            {
+                if (string.IsNullOrEmpty(login) || string.IsNullOrEmpty(password))
+                    return;
+                SetStatusCodeAtUI("Internet connection problem");
+                return;
+            }
+
+            var balance = double.Parse(XmlResponse.ProcessCheckBallanceResponse(Encoding.UTF8.GetString(response)),
+                NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture);
+
+            BalanceLabel = string.Format("{0} ({1} sms)", balance, (balance/0.13).ToString("#"));
         }
 
         private void SaveSettings()
@@ -445,26 +542,26 @@ namespace SmsSender.ViewModels
 
         private void RefreshSymbolAndSmsCount()
         {
-            this.SymbolCount = this.Body.Length;
+            SymbolCount = Body.Length;
 
-            if (this.SymbolCount > 70)
+            if (SymbolCount > 70)
             {
-                if (this.SymbolCount % 67 == 0)
+                if (SymbolCount%67 == 0)
                 {
-                    this.SmsCount = this.SymbolCount / 67;
+                    SmsCount = SymbolCount/67;
                 }
                 else
                 {
-                    this.SmsCount = (this.SymbolCount / 67) + 1;
+                    SmsCount = (SymbolCount/67) + 1;
                 }
             }
             else
             {
-                this.SmsCount = 1;
+                SmsCount = 1;
             }
 
-            this.NotifyOfPropertyChange(() => this.SymbolCount);
-            this.NotifyOfPropertyChange(() => this.SmsCount);
+            NotifyOfPropertyChange(() => SymbolCount);
+            NotifyOfPropertyChange(() => SmsCount);
         }
     }
 }

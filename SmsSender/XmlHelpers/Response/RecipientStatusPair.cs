@@ -25,11 +25,11 @@
 
         private void SendPropertyChanged(string propertyName)
         {
-            var handler = this.PropertyChanged;
+            var handler = PropertyChanged;
             if (handler != null)
             {
                 var e = new PropertyChangedEventArgs(propertyName);
-                this.PropertyChanged(this, e);
+                PropertyChanged(this, e);
             }
         }
 
