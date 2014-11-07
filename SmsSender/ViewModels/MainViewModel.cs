@@ -27,9 +27,9 @@ namespace SmsSender.ViewModels
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
-        private bool autoStartDate;
-        private bool autoEndDate;
+        private bool autoStartDate, autoEndDate, canMyTels, canRec;
         private string recipientsFile, body, source, login, password, balanceLabel;
+        private int labelUniq, labelDelivered;
         private DateTime startDate, endDate;
         private Timer timer;
 
@@ -100,6 +100,26 @@ namespace SmsSender.ViewModels
             }
         }
 
+        public int LabelDelivered
+        {
+            get { return labelDelivered; }
+            set
+            {
+                labelDelivered = value;
+                NotifyOfPropertyChange(() => LabelDelivered);
+            }
+        }
+
+        public int LabelUniq
+        {
+            get { return labelUniq; }
+            set
+            {
+                labelUniq = value;
+                NotifyOfPropertyChange(() => labelUniq);
+            }
+        }
+
         public Byte RateLabel { get; set; }
 
         public string Source
@@ -152,6 +172,26 @@ namespace SmsSender.ViewModels
         public int SymbolCount { get; set; }
         public int SmsCount { get; set; }
 
+        public bool CanButtonRecipients
+        {
+            get { return canRec; }
+            set
+            {
+                canRec = value;
+                NotifyOfPropertyChange(() => CanButtonRecipients);
+            }
+        }
+
+        public bool CanButtonMyPhones
+        {
+            get { return canMyTels; }
+            set
+            {
+                canMyTels = value;
+                NotifyOfPropertyChange(() => CanButtonMyPhones);
+            }
+        }
+
         [ImportingConstructor]
         public MainViewModel()
         {
@@ -173,6 +213,7 @@ namespace SmsSender.ViewModels
 
         public void ButtonRecipients()
         {
+            CanButtonStart = false;
             var dlg = new OpenFileDialog
             {
                 CheckFileExists = true,
@@ -183,12 +224,15 @@ namespace SmsSender.ViewModels
             if (dlg.ShowDialog() == false) return;
             recipientsFile = dlg.FileName;
 
+            LabelUniq = GetUniqTels(recipientsFile).Count;
+
             ChangeRecipientsFileLabelStatus(true);
             GetButtonStartEnabledStatus();
         }
 
         public void ButtonMyPhones()
         {
+            CanButtonStart = false;
             var dlg = new OpenFileDialog
             {
                 CheckFileExists = true,
@@ -220,6 +264,7 @@ namespace SmsSender.ViewModels
             }
             catch (Exception)
             {
+                GetButtonStartEnabledStatus();
                 MessageBox.Show(string.Format("Close {0} file before reading", dlg.FileName));
                 return;
             }
@@ -240,10 +285,16 @@ namespace SmsSender.ViewModels
 
             XmlDataWorker.SetTels(phones
                 .Where(x => !existedPhones.Contains(x)), "myPhones");
+
+            if (!string.IsNullOrEmpty(recipientsFile))
+                LabelUniq = GetUniqTels(recipientsFile).Count;
+            GetButtonStartEnabledStatus();
         }
 
         public async void ButtonStart()
         {
+            CanButtonRecipients = false;
+            CanButtonMyPhones = false;
             ChangeButtonStartEnabledStatus(false);
             ChangeStatusCodeColor(false);
             SetStatusCodeAtUI(string.Empty);
@@ -260,39 +311,13 @@ namespace SmsSender.ViewModels
                 LifeTime = 24
             };
 
-            //формируем список новых телефонов
-            List<string> phonesList;
-            if (recipientsFile.EndsWith("txt"))
-                phonesList = File.ReadAllLines(recipientsFile).ToList();
-            else
-            {
-                try
-                {
-                    phonesList = XmlDataWorker.GetTels(recipientsFile, "tels").ToList();
-                }
-                catch (Exception)
-                {
-                    SetStatusCodeAtUI("Wrong XML format");
-                    return;
-                }
-            }
+            var phonesList = GetUniqTels(recipientsFile);
 
             if (phonesList.Count == 0)
             {
                 SetStatusCodeAtUI("Empty number list");
-                return;
-            }
-
-            var phonesInBase = XmlDataWorker.GetTels("SP.xml", "tels");
-            var myPhones = XmlDataWorker.GetTels("SP.xml", "myPhones");
-            phonesList = phonesList
-                .Where(x => !phonesInBase.Contains(x) &&
-                            !myPhones.Contains(x))
-                .ToList();
-
-            if (phonesList.Count == 0)
-            {
-                SetStatusCodeAtUI("Empty number list");
+                CanButtonRecipients = true;
+                CanButtonMyPhones = true;
                 return;
             }
 
@@ -314,6 +339,8 @@ namespace SmsSender.ViewModels
             }
             catch (Exception)
             {
+                CanButtonRecipients = true;
+                CanButtonMyPhones = true;
                 SetStatusCodeAtUI("Internet connection problem");
                 return;
             }
@@ -323,6 +350,8 @@ namespace SmsSender.ViewModels
             if (responseXml.Contains("Access denied!"))
             {
                 SetStatusCodeAtUI("INCORECT LOGIN OR PASSWORD");
+                CanButtonRecipients = true;
+                CanButtonMyPhones = true;
                 return;
             }
 
@@ -355,6 +384,8 @@ namespace SmsSender.ViewModels
                     {
                         Application.Current.Dispatcher.BeginInvoke(
                             new System.Action(() => SetStatusCodeAtUI("Internet connection problem")));
+                        CanButtonRecipients = true;
+                        CanButtonMyPhones = true;
                         return;
                     }
 
@@ -401,6 +432,12 @@ namespace SmsSender.ViewModels
                                 x.RecipientStatusPair.Status != "ALFANAMELIMITED")
                             .Select(x => x.RecipientStatusPair.Recipient), "tels");
 
+                        LabelDelivered = XmlDataWorker.GetTels("SP.xml", "tels").Count;
+                        LabelUniq = GetUniqTels(recipientsFile).Count;
+
+                        CanButtonRecipients = true;
+                        CanButtonMyPhones = true;
+                        ChangeRecipientsFileLabelStatus(true);
                         ChangeButtonStartEnabledStatus(true);
                         ChangeStatusCodeColor(true);
                     }
@@ -416,6 +453,8 @@ namespace SmsSender.ViewModels
             else
             {
                 SetStatusCodeAtUI(status.Code.ToString());
+                CanButtonRecipients = true;
+                CanButtonMyPhones = true;
 
                 File.WriteAllText("request.xml", requestXml);
                 File.WriteAllText("response.xml", responseXml);
@@ -477,9 +516,14 @@ namespace SmsSender.ViewModels
 
         private void LoadSavedSettings()
         {
+            CanButtonRecipients = true;
+            CanButtonMyPhones = true;
+
             if (File.Exists("Full.xml"))
             {
                 recipientsFile = "Full.xml";
+                LabelUniq = GetUniqTels(recipientsFile).Count;
+
                 ChangeRecipientsFileLabelStatus(true);
             }
 
@@ -501,9 +545,49 @@ namespace SmsSender.ViewModels
             value = XmlSettingsWorker.GetValue("numberlimit");
             NumberLimit = !string.IsNullOrEmpty(value) ? int.Parse(value) : 1;
 
+            LabelDelivered = XmlDataWorker.GetTels("SP.xml", "tels").Count;
             GetBalance();
 
             RefreshSymbolAndSmsCount();
+        }
+
+        private IList<string> GetUniqTels(string recipientFile)
+        {
+            //формируем список новых телефонов
+            List<string> phonesList;
+
+            if (!string.IsNullOrEmpty(recipientFile) && recipientsFile.EndsWith("txt"))
+                phonesList = File.ReadAllLines(recipientsFile).ToList();
+            else if (!string.IsNullOrEmpty(recipientFile) && recipientsFile.EndsWith("xml"))
+            {
+                try
+                {
+                    phonesList = XmlDataWorker.GetTels(recipientsFile, "tels").ToList();
+                }
+                catch (Exception)
+                {
+                    SetStatusCodeAtUI("Wrong XML format");
+                    return new List<string>();
+                }
+            }
+            else
+            {
+                SetStatusCodeAtUI("Wrong recipient file");
+                return new List<string>();
+            }
+
+            if (phonesList.Count == 0)
+            {
+                SetStatusCodeAtUI("Empty number list");
+                return new List<string>();
+            }
+
+            var phonesInBase = XmlDataWorker.GetTels("SP.xml", "tels");
+            var myPhones = XmlDataWorker.GetTels("SP.xml", "myPhones");
+            return phonesList
+                .Where(x => !phonesInBase.Contains(x) &&
+                            !myPhones.Contains(x))
+                .ToList();
         }
 
         private async void GetBalance()

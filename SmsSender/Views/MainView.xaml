@@ -73,7 +73,6 @@
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
-
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Grid.Row="0" Text="Start date:"/>
@@ -83,19 +82,38 @@
                 <TextBlock Grid.Column="0" Grid.Row="1" Text="End date:"/>
                 <CheckBox x:Name="AutoEndDate" Grid.Column="1" Grid.Row="1" Content="Use AUTO" Margin="5, 0, 5, 0"/>
                 <xctk:DateTimePicker Grid.Column="2" Grid.Row="1" Value="{Binding EndDate}" IsEnabled="{Binding CanEndDate}"/>
-
             </Grid>
 
-            <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="10">
-                <TextBlock Text="Rate:"/>
-                <Slider x:Name="Rate" Minimum="1" Maximum="120" MinWidth="100" Margin="5, 0, 0, 0"/>
-                <Label x:Name="RateLabel" MinWidth="30" Margin="5, 0, 0, 0"/>
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>                    
+                </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10">
+                <TextBlock Text="Rate:" Margin="0,3,0,0"/>
+                <Slider x:Name="Rate" Minimum="1" Maximum="120" MinWidth="100" Margin="5,3,0,0"/>
+                <Label x:Name="RateLabel" MinWidth="30" Content="1" Margin="5,0,0,0"/>
             </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Label Content="Unique tels for sending:"/>
+                    <Label Name="LabelUniq"/>
+                </StackPanel>
+            </Grid>
 
-            <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="10">
-                <TextBlock Text="Source:"/>
-                <TextBox x:Name="Source" MinWidth="100" Margin="5, 0, 0, 0"/>
-            </StackPanel>
+            <Grid Grid.Row="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    <ColumnDefinition Width="*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,10,22,10">
+                    <TextBlock Text="Source:" Margin="0,3,0,0"/>
+                    <TextBox x:Name="Source" MinWidth="100" Margin="5, 0, 0, 0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10">
+                    <Label Content="Delivered tels:"/>
+                    <Label Name="LabelDelivered"/>
+                </StackPanel>
+            </Grid>
 
             <StackPanel Grid.Row="6" Orientation="Horizontal" Margin="10">
                 <TextBlock Text="Body:"/>
@@ -119,7 +137,7 @@
 
             <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="10">
                 <TextBlock Text="Number limit: "/>
-                <xctk:IntegerUpDown Value="{Binding NumberLimit}"/>
+                <xctk:IntegerUpDown Width="70" Value="{Binding NumberLimit}"/>
             </StackPanel>
         </Grid>
 
