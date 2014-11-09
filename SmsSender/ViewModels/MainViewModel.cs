@@ -1,27 +1,26 @@
-﻿using System.Globalization;
-using System.Text.RegularExpressions;
-using NPOI.HSSF.UserModel;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
-
-namespace SmsSender.ViewModels
+﻿namespace SmsSender.ViewModels
 {
-    using System.Windows.Controls;
     using Caliburn.Micro;
     using Microsoft.Win32;
-    using XmlHelpers;
-    using XmlHelpers.Response;
+    using NPOI.HSSF.UserModel;
+    using NPOI.SS.UserModel;
+    using NPOI.XSSF.UserModel;
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.ComponentModel.Composition;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Windows;
+    using System.Windows.Controls;
+    using XmlHelpers;
     using XmlHelpers.Request;
+    using XmlHelpers.Response;
 
     [Export(typeof (MainViewModel))]
     public class MainViewModel : PropertyChangedBase
