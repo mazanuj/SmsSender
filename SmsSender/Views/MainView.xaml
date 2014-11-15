@@ -134,10 +134,12 @@
 
                 </StackPanel>
             </StackPanel>
-
+            
             <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="10">
+                
                 <TextBlock Text="Number limit: "/>
                 <xctk:IntegerUpDown Width="70" Value="{Binding NumberLimit}"/>
+                <Button Name="ButtonClear" Content="Clear phone base" Width="120" Margin="100,0,0,0"/>
             </StackPanel>
         </Grid>
 

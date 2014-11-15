@@ -38,5 +38,13 @@ namespace SmsSender.XmlHelpers
 
             doc.Save(XmlFilePath);
         }
+
+        internal static void DeleteTels(string xmlFilePath, string node)
+        {
+            var doc = XDocument.Load(XmlFilePath);
+
+            doc.XPathSelectElement("//" + node + "item").RemoveAll();
+            doc.Save(xmlFilePath);
+        }
     }
 }

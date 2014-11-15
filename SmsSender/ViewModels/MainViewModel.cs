@@ -166,6 +166,7 @@ namespace SmsSender.ViewModels
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
         public bool CanButtonStart { get; set; }
+        public bool CanButtonClear { get; set; }
         public string StatusCode { get; set; }
         public bool StatusCodeColorBool { get; set; }
         public int NumberLimit { get; set; }
@@ -289,6 +290,13 @@ namespace SmsSender.ViewModels
             if (!string.IsNullOrEmpty(recipientsFile))
                 LabelUniq = GetUniqTels(recipientsFile).Count;
             GetButtonStartEnabledStatus();
+        }
+
+        public void ButtonClear()
+        {
+            XmlDataWorker.DeleteTels("SP.xml", "tels");
+            LabelUniq = GetUniqTels(recipientsFile).Count;
+            ChangeRecipientsFileLabelStatus(true);
         }
 
         public async void ButtonStart()
