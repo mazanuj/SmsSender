@@ -27,7 +27,7 @@ namespace SmsSender.ViewModels
     public class MainViewModel : PropertyChangedBase
     {
         private Byte rate = 120;
-        private bool autoStartDate, autoEndDate, canMyTels, canRec;
+        private bool autoStartDate, autoEndDate, canMyTels, canRec, canButtonClear;
         private string recipientsFile, body, source, login, password, balanceLabel;
         private int labelUniq, labelDelivered;
         private DateTime startDate, endDate;
@@ -165,13 +165,25 @@ namespace SmsSender.ViewModels
         public bool RecipientsFileLabel { get; set; }
         public bool CanStartDate { get; set; }
         public bool CanEndDate { get; set; }
-        public bool CanButtonStart { get; set; }
-        public bool CanButtonClear { get; set; }
+        public bool CanButtonStart { get; set; }        
         public string StatusCode { get; set; }
         public bool StatusCodeColorBool { get; set; }
         public int NumberLimit { get; set; }
         public int SymbolCount { get; set; }
         public int SmsCount { get; set; }
+
+        public bool CanButtonClear
+        {
+            get
+            {
+                return canButtonClear;
+            }
+            set
+            {
+                canButtonClear = value;
+                NotifyOfPropertyChange(() => CanButtonClear);
+            }
+        }
 
         public bool CanButtonRecipients
         {
@@ -295,8 +307,7 @@ namespace SmsSender.ViewModels
         public void ButtonClear()
         {
             XmlDataWorker.DeleteTels("SP.xml", "tels");
-            LabelUniq = GetUniqTels(recipientsFile).Count;
-            ChangeRecipientsFileLabelStatus(true);
+            LabelDelivered = XmlDataWorker.GetTels("SP.xml", "tels").Count;
         }
 
         public async void ButtonStart()
@@ -526,6 +537,7 @@ namespace SmsSender.ViewModels
         {
             CanButtonRecipients = true;
             CanButtonMyPhones = true;
+            CanButtonClear = true;
 
             if (File.Exists("Full.xml"))
             {
