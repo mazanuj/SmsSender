@@ -637,10 +637,10 @@
         {
             XmlSettingsWorker.SetValue("login", Login);
             XmlSettingsWorker.SetValue("password", Password);
-            XmlSettingsWorker.SetValue("rate", Rate.ToString());
+            XmlSettingsWorker.SetValue("rate", Rate.ToString(CultureInfo.InvariantCulture));
             XmlSettingsWorker.SetValue("source", Source);
             XmlSettingsWorker.SetValue("body", Body);
-            XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString());
+            XmlSettingsWorker.SetValue("numberlimit", NumberLimit.ToString(CultureInfo.InvariantCulture));
         }
 
         private void RefreshSymbolAndSmsCount()
