@@ -11,7 +11,7 @@
         {
             var doc = XDocument.Load(XmlFilePath);
 
-            var element = doc.XPathSelectElement(string.Format("//settings/{0}", purpose));
+            var element = doc.XPathSelectElement($"//settings/{purpose}");
 
             return element.Value;
         }
@@ -20,7 +20,7 @@
         {
             var doc = XDocument.Load(XmlFilePath);
 
-            var element = doc.XPathSelectElement(string.Format("//settings/{0}", purpose));
+            var element = doc.XPathSelectElement($"//settings/{purpose}");
 
             element.Value = value;
 

@@ -25,7 +25,7 @@
     [Export(typeof (MainViewModel))]
     public class MainViewModel : PropertyChangedBase
     {
-        private Byte rate = 120;
+        private byte rate = 120;
         private bool autoStartDate, autoEndDate, canMyTels, canRec, canButtonClear;
         private string recipientsFile, body, source, login, password, balanceLabel;
         private int labelUniq, labelDelivered;
@@ -348,12 +348,11 @@
 
             //send request
             WebClient wc;
-            Byte[] response;
+            byte[] response;
             try
             {
                 wc = new WebClient {Credentials = new NetworkCredential(Login, Password)};
-                response = await wc.UploadDataTaskAsync(
-                    new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
+                response = await wc.UploadDataTaskAsync(new Uri("http://sms-fly.com/api/api.php"), "POST", Encoding.UTF8.GetBytes(requestXml));
             }
             catch (Exception)
             {
@@ -383,9 +382,9 @@
                 foreach (var tair in status.RecipientStatusPairs)
                 {
                     var pair = tair;
-                    Application.Current.Dispatcher.BeginInvoke(
-                        new System.Action(
-                            () => RecipientStatusCollection.Insert(0, pair)));
+                    await
+                        Application.Current.Dispatcher.BeginInvoke(
+                            new System.Action(() => RecipientStatusCollection.Insert(0, pair)));
                 }
 
                 var interval = parameters.Recipients.Count <= 120 ? 30000 : 60000;
@@ -400,8 +399,9 @@
                     }
                     catch (Exception)
                     {
-                        Application.Current.Dispatcher.BeginInvoke(
-                            new System.Action(() => SetStatusCodeAtUI("Internet connection problem")));
+                        await
+                            Application.Current.Dispatcher.BeginInvoke(
+                                new System.Action(() => SetStatusCodeAtUI("Internet connection problem")));
                         CanButtonRecipients = true;
                         CanButtonMyPhones = true;
                         return;
@@ -409,25 +409,20 @@
 
                     var detailedStatus =
                         XmlResponse.ProcessDetailedMessageStatusResponse(Encoding.UTF8.GetString(response));
-
-                    Application.Current.Dispatcher.BeginInvoke(
-                        new System.Action(() => SetStatusCodeAtUI(detailedStatus.Status)));
+                    await
+                        Application.Current.Dispatcher.BeginInvoke(
+                            new System.Action(() => SetStatusCodeAtUI(detailedStatus.Status)));
 
                     foreach (var message in detailedStatus.Messages)
                     {
                         var msg = message;
-
-                        Application.Current.Dispatcher.BeginInvoke(
-                            new System.Action(
-                                () =>
-                                {
-                                    var pair =
-                                        RecipientStatusCollection.Single(
-                                            x => x.Recipient == msg.RecipientStatusPair.Recipient);
-
-                                    if (pair != null) pair.Status = msg.RecipientStatusPair.Status;
-
-                                }));
+                        await Application.Current.Dispatcher.BeginInvoke(new System.Action(() =>
+                        {
+                            var pair =
+                                RecipientStatusCollection.Single(x => x.Recipient == msg.RecipientStatusPair.Recipient);
+                            if (pair != null)
+                                pair.Status = msg.RecipientStatusPair.Status;
+                        }));
                     }
 
                     if ((detailedStatus.Status != "INPROGRESS" &&

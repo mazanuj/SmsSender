@@ -33,7 +33,7 @@
 
             requestElement.Add(messageElement);
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
 
         /// <summary>
@@ -63,7 +63,7 @@
 
             requestElement.Add(messageElement);
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
 
         /// <summary>
@@ -76,7 +76,7 @@
 
             requestElement.Add(new XElement("message", new XAttribute("campaignID", campaignId)));
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
 
         /// <summary>
@@ -89,7 +89,7 @@
 
             requestElement.Add(new XElement("message", new XAttribute("campaignID", campaignId)));
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
 
         /// <summary>
@@ -104,7 +104,7 @@
                 new XAttribute("campaignID", campaignId),
                 new XAttribute("recipient", recipient)));
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
 
         /// <summary>
@@ -115,7 +115,7 @@
             var requestElement = new XElement("request");
             requestElement.Add(new XElement("operation", OperationEnum.GETBALANCE));
 
-            return string.Format("{0}\n{1}", Declaration, requestElement);
+            return $"{Declaration}\n{requestElement}";
         }
     }
 }

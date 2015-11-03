@@ -18,7 +18,7 @@ namespace SmsSender.XmlHelpers
             {
                 var att =
                     (IEnumerable)
-                        doc.XPathSelectElements(string.Format("//{0}/item", node)).Select(x => x.Value);
+                        doc.XPathSelectElements($"//{node}/item").Select(x => x.Value);
 
                 return att as IList<string> ?? att.Cast<string>().ToList();
             }
@@ -41,11 +41,11 @@ namespace SmsSender.XmlHelpers
 
         internal static void DeleteTels(string xmlFilePath, string node)
         {
-            var doc = XDocument.Load(XmlFilePath);            
+            var doc = XDocument.Load(XmlFilePath);
 
             try
             {
-                var att = doc.XPathSelectElements(string.Format("//{0}/item", node));
+                var att = doc.XPathSelectElements($"//{node}/item");
 
                 var xElements = att as IList<XElement> ?? att.ToList();
                 if (xElements.Count() != 0)
@@ -53,7 +53,6 @@ namespace SmsSender.XmlHelpers
             }
             catch
             {
-
             }
 
             doc.Save(xmlFilePath);
